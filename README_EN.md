@@ -25,21 +25,22 @@
 
 ## Download
 
-Get the latest release from GitHub Releases.
+Get the latest release from GitHub Releases. It comes in three forms.
 
-- Regular users: `Quota-Watch-Setup-<version>-win-x64.exe`
-- Run without installing: `Quota-Watch-<version>-win-x64-portable.zip`
+- **Full installer (recommended)**: `Quota-Watch-Setup-<version>-win-x64.exe` — a self-contained installer with the .NET runtime bundled in. Runs right away with no separate runtime install.
+- **Web installer (smaller download)**: `Quota-Watch-WebSetup-<version>-win-x64.exe` — downloads the .NET 10 Desktop Runtime during setup if it is missing. Requires an internet connection and requests administrator privileges for the runtime install step.
+- **Run without installing**: `Quota-Watch-<version>-win-x64-portable.zip` — a self-contained build you just extract and run.
 
-Both the installer and the portable zip are self-contained builds. In most cases you do not need to install the .NET Runtime separately.
+The installers install per-user without administrator privileges (except the web installer's runtime download step).
 
 ## Installation
 
-### Using the installer
+### Using an installer
 
-1. Download `Quota-Watch-Setup-<version>-win-x64.exe` from Releases.
-2. Run the installer.
-3. After installation, launch it from the Start menu or the desktop shortcut.
-4. Once running, open the dashboard from the Windows tray icon.
+1. Download the full installer `Quota-Watch-Setup-<version>-win-x64.exe` or the web installer `Quota-Watch-WebSetup-<version>-win-x64.exe` from Releases.
+2. Run the installer. The web installer only prompts to download the .NET 10 Desktop Runtime when it is missing.
+3. During setup you can opt into a desktop icon and starting automatically with Windows (both off by default).
+4. After installation, launch it from the Start menu or the desktop shortcut, then open the dashboard from the Windows tray icon.
 
 ### Using the portable zip
 
@@ -50,7 +51,7 @@ Both the installer and the portable zip are self-contained builds. In most cases
 ## Features
 
 - Track Codex, Claude Code, and Google Antigravity usage
-- Display 5-hour / weekly quota windows
+- Display 5-hour / weekly or per-model quota windows depending on the provider
 - Quota-exhaustion notifications
 - Per-provider login and configuration guidance
 - Tray icon and profile switching
@@ -83,7 +84,7 @@ You must be signed in to Antigravity with a Google account. Quota Watch uses the
 - `%APPDATA%\Antigravity IDE\User\globalStorage\state.vscdb`
 - `%APPDATA%\Antigravity\User\globalStorage\state.vscdb`
 
-To refresh an expired token even when the IDE is closed, you can save your own OAuth client ID and client secret under Settings > Antigravity OAuth. These are the values you obtain when you create an OAuth desktop app in the Google Cloud Console. Rather than connecting directly to the Antigravity IDE, they are used by Quota Watch to refresh — without the IDE — the refresh token that Antigravity created via Google sign-in. They are not stored in plain text in the app settings file; they are encrypted to your current Windows user account with Windows DPAPI. The `ANTIGRAVITY_OAUTH_CLIENT_ID` / `ANTIGRAVITY_OAUTH_CLIENT_SECRET` environment variables are still supported as well.
+To refresh an expired token even when the IDE is closed, save your own OAuth client ID and secret under Settings > Antigravity OAuth. You get these values when you create an OAuth desktop app in the Google Cloud Console. They are not for connecting to the IDE; Quota Watch uses them to refresh — without the IDE — the refresh token that Antigravity created via Google sign-in. The saved values are not stored in plain text; they are encrypted to your current Windows user account with Windows DPAPI. The `ANTIGRAVITY_OAUTH_CLIENT_ID` / `ANTIGRAVITY_OAUTH_CLIENT_SECRET` environment variables also keep working.
 
 If the stored credentials are valid, you do not need to keep Antigravity or the Antigravity IDE running. If cloud limits cannot be read directly, Quota Watch falls back to the local endpoint of a running Antigravity IDE.
 
@@ -101,7 +102,7 @@ Check the guidance shown on the provider cards in the dashboard first.
 
 If you need a diagnostic log, run the app from PowerShell as shown below.
 
-### When installed via the installer
+### When installed via an installer
 
 ```powershell
 $env:AILIMIT_DEBUG_LOG="1"
@@ -148,6 +149,7 @@ Output:
 
 - `artifacts/release/Quota-Watch-<version>-win-x64-portable.zip`
 - `artifacts/release/Quota-Watch-Setup-<version>-win-x64.exe`
+- `artifacts/release/Quota-Watch-WebSetup-<version>-win-x64.exe`
 
 If you hit temp-folder permission issues in the test environment, run:
 
