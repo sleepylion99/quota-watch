@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AiLimit.App/AiLimit.App.csproj" />
+    <Project Path="src/AiLimit.Core/AiLimit.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AiLimit.Tests/AiLimit.Tests.csproj" />
+  </Folder>
+</Solution>

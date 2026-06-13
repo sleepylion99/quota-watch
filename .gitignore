@@ -1,0 +1,16 @@
+.superpowers/
+.worktrees/
+.tmp/
+**/.tmp/
+.test-temp/
+.test-obj*/
+backup/
+tools/
+artifacts/
+docs/
+bin/
+obj/
+.vs/
+*.user
+*_wpftmp.csproj
+TestResults/

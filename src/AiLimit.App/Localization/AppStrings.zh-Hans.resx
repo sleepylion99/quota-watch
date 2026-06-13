@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AntigravityOAuthClientIdLabel" xml:space="preserve"><value>客户端 ID</value></data>
+  <data name="AntigravityOAuthClientSecretLabel" xml:space="preserve"><value>客户端密钥</value></data>
+  <data name="AntigravityOAuthDetail" xml:space="preserve"><value>如需在关闭 IDE 后刷新，请在 Google Cloud 创建 OAuth 桌面应用，然后在此粘贴自己的 {0} 和 {1}。值会为此 Windows 用户加密。</value></data>
+  <data name="AntigravityOAuthMissingInput" xml:space="preserve"><value>请输入 {0} 和 {1}。</value></data>
+  <data name="AntigravityOAuthSaved" xml:space="preserve"><value>已为此 Windows 用户加密保存。</value></data>
+  <data name="AntigravityOAuthSaveFailed" xml:space="preserve"><value>无法保存客户端值。</value></data>
+  <data name="AntigravityOAuthCleared" xml:space="preserve"><value>已清除保存的客户端值。</value></data>
+  <data name="AntigravityOAuthClearFailed" xml:space="preserve"><value>无法清除客户端值。</value></data>
+  <data name="AntigravityOAuthLoadFailed" xml:space="preserve"><value>无法加载保存的客户端值。</value></data>
+  <data name="AntigravityOAuthSavedExists" xml:space="preserve"><value>已为此 Windows 用户保存加密客户端值。</value></data>
+  <data name="AntigravityOAuthMissing" xml:space="preserve"><value>没有保存的客户端值。</value></data>
+  <data name="AntigravityOAuthSettingsLabel" xml:space="preserve"><value>设置 &gt; Antigravity OAuth</value></data>
+  <data name="AntigravityMissingOAuthClientError" xml:space="preserve"><value>Antigravity 令牌刷新需要你的 OAuth 客户端值。请在 {0} 保存 {1} 和 {2} 后重新刷新。</value></data>
+  <data name="AntigravityCloudSetupError" xml:space="preserve"><value>请先在 Antigravity 中使用 Google 账号登录。如果 Cloud 不可用，请打开 Antigravity IDE 后再次刷新。</value></data>
+  <data name="AntigravityOAuthSaveButtonText" xml:space="preserve"><value>保存</value></data>
+  <data name="AntigravityOAuthClearButtonText" xml:space="preserve"><value>清除</value></data>
+  <data name="AntigravityOAuthGuideButtonText" xml:space="preserve"><value>查看设置指南</value></data>
+  <data name="AntigravityOAuthGuideOpenFailed" xml:space="preserve"><value>无法打开设置指南。</value></data>
+  <data name="AppTagline" xml:space="preserve"><value>Windows 控制室</value></data>
+  <data name="TrackedLabel" xml:space="preserve"><value>正在跟踪</value></data>
+  <data name="OverallStatusLabel" xml:space="preserve"><value>整体状态</value></data>
+  <data name="LastCheckedLabel" xml:space="preserve"><value>上次检查</value></data>
+  <data name="HeaderSubtitleNoData" xml:space="preserve"><value>尚无模型数据</value></data>
+  <data name="StatusRefreshing" xml:space="preserve"><value>正在刷新...</value></data>
+  <data name="StatusNotRefreshed" xml:space="preserve"><value>尚未刷新</value></data>
+  <data name="StatusAllFresh" xml:space="preserve"><value>全部正常</value></data>
+  <data name="StatusFailed" xml:space="preserve"><value>{0}项失败</value></data>
+  <data name="CheckedAtNever" xml:space="preserve"><value>无</value></data>
+  <data name="ResetUnavailable" xml:space="preserve"><value>无重置时间</value></data>
+  <data name="ResetAt" xml:space="preserve"><value>{0:g} 重置</value></data>
+  <data name="NotActiveInSession" xml:space="preserve"><value>会话中未使用</value></data>
+  <data name="GuidanceRefreshingTitle" xml:space="preserve"><value>正在检查最新用量</value></data>
+  <data name="GuidanceRefreshingDetail" xml:space="preserve"><value>限制状态稍后会更新。</value></data>
+  <data name="GuidanceRefreshingAction" xml:space="preserve"><value>如果有之前的数据，会继续显示。</value></data>
+  <data name="GuidanceNoDataTitle" xml:space="preserve"><value>刷新以加载用量</value></data>
+  <data name="GuidanceNoDataDetail" xml:space="preserve"><value>尚未加载可显示的用量数据。</value></data>
+  <data name="GuidanceNoDataAction" xml:space="preserve"><value>使用全部刷新检查当前限制。</value></data>
+  <data name="GuidanceNoDataWidget" xml:space="preserve"><value>需要刷新</value></data>
+  <data name="GuidanceFailedTitle" xml:space="preserve"><value>部分用量检查失败</value></data>
+  <data name="GuidanceFailedDetail" xml:space="preserve"><value>如有可用，会继续显示最后一次数据。</value></data>
+  <data name="GuidanceFailedAction" xml:space="preserve"><value>请重试全部刷新或检查提供方设置。</value></data>
+  <data name="GuidanceFailedWidget" xml:space="preserve"><value>检查失败 · 重试</value></data>
+  <data name="GuidanceStaleTitle" xml:space="preserve"><value>用量信息可能已过期</value></data>
+  <data name="GuidanceStaleDetail" xml:space="preserve"><value>仍在显示最后保存的数据。</value></data>
+  <data name="GuidanceStaleAction" xml:space="preserve"><value>方便时请刷新。</value></data>
+  <data name="GuidanceStaleWidget" xml:space="preserve"><value>数据可能已过期</value></data>
+  <data name="GuidanceFreshTitle" xml:space="preserve"><value>用量已是最新</value></data>
+  <data name="GuidanceFreshDetail" xml:space="preserve"><value>所有正在跟踪的模型都正常报告。</value></data>
+  <data name="GuidanceFreshAction" xml:space="preserve"><value>可以继续工作。</value></data>
+  <data name="GuidanceFreshWidget" xml:space="preserve"><value>最新 · 可以继续工作</value></data>
+  <data name="FiveHourModeText" xml:space="preserve"><value>5小时限制</value></data>
+  <data name="WeeklyModeText" xml:space="preserve"><value>每周限制</value></data>
+  <data name="BothModeText" xml:space="preserve"><value>5小时 + 每周</value></data>
+  <data name="BarsModeText" xml:space="preserve"><value>图表视图</value></data>
+  <data name="ToggleWidgetButtonText" xml:space="preserve"><value>切换小组件</value></data>
+  <data name="DashboardButtonText" xml:space="preserve"><value>仪表盘</value></data>
+  <data name="SettingsButtonText" xml:space="preserve"><value>设置</value></data>
+  <data name="RefreshButtonText" xml:space="preserve"><value>刷新</value></data>
+  <data name="RefreshAllButtonText" xml:space="preserve"><value>全部刷新</value></data>
+  <data name="HideButtonText" xml:space="preserve"><value>隐藏</value></data>
+  <data name="TrackProviderLabel" xml:space="preserve"><value>跟踪</value></data>
+  <data name="SettingsPanelDetailText" xml:space="preserve"><value>在一处调整仪表盘行为和支持功能。</value></data>
+  <data name="SettingsApplyButtonText" xml:space="preserve"><value>应用</value></data>
+  <data name="SettingsCloseButtonText" xml:space="preserve"><value>关闭</value></data>
+  <data name="SettingsImmediateApplyText" xml:space="preserve"><value>点击应用会保存待处理的更改。</value></data>
+  <data name="SettingsUnsavedTitleText" xml:space="preserve"><value>未保存的更改</value></data>
+  <data name="SettingsUnsavedDetailText" xml:space="preserve"><value>不保存更改并关闭设置吗？</value></data>
+  <data name="SettingsDiscardButtonText" xml:space="preserve"><value>放弃</value></data>
+  <data name="SettingsKeepEditingButtonText" xml:space="preserve"><value>返回</value></data>
+  <data name="ModelSettingsButtonText" xml:space="preserve"><value>模型设置</value></data>
+  <data name="ModelSettingsDetailText" xml:space="preserve"><value>选择要在仪表盘显示的提供方。</value></data>
+  <data name="LanguageSettingsTitleText" xml:space="preserve"><value>语言</value></data>
+  <data name="LanguageSettingsDetailText" xml:space="preserve"><value>默认跟随系统语言，也可以手动选择显示语言。</value></data>
+  <data name="ThemeSettingsTitleText" xml:space="preserve"><value>主题</value></data>
+  <data name="ThemeSettingsDetailText" xml:space="preserve"><value>选择仪表板的外观。</value></data>
+  <data name="ThemeOptionDark" xml:space="preserve"><value>深色</value></data>
+  <data name="ThemeOptionLight" xml:space="preserve"><value>浅色</value></data>
+  <data name="ThemeOptionSystem" xml:space="preserve"><value>自动</value></data>
+  <data name="ThemeSystemHintText" xml:space="preserve"><value>自动跟随 Windows 应用主题。</value></data>
+  <data name="LimitWarningSettingsTitleText" xml:space="preserve"><value>限制提醒</value></data>
+  <data name="LimitWarningSettingsDetailText" xml:space="preserve"><value>剩余额度低于阈值时提醒；使用率额度达到对应已用比例时提醒。</value></data>
+  <data name="LimitWarningEnabledText" xml:space="preserve"><value>启用限制提醒</value></data>
+  <data name="LimitWarningThresholdText" xml:space="preserve"><value>提醒阈值</value></data>
+  <data name="LimitWarningThresholdOption" xml:space="preserve"><value>剩余 {0}% 以下 / 已用 {1}%</value></data>
+  <data name="LimitWarningCustomThresholdLabel" xml:space="preserve"><value>自定义:</value></data>
+  <data name="UpdateCheckTitleText" xml:space="preserve"><value>更新</value></data>
+  <data name="UpdateCheckDetailText" xml:space="preserve"><value>检查是否有新版本。</value></data>
+  <data name="CheckForUpdatesButtonText" xml:space="preserve"><value>检查更新</value></data>
+  <data name="DiagnosticLogTitleText" xml:space="preserve"><value>诊断日志</value></data>
+  <data name="DiagnosticLogDetailText" xml:space="preserve"><value>发现问题了吗？请复制此日志并发送给开发者。</value></data>
+  <data name="CopyDiagnosticLogButtonText" xml:space="preserve"><value>复制日志</value></data>
+  <data name="TrayRefreshToLoad" xml:space="preserve"><value>需要刷新</value></data>
+  <data name="TrayFailed" xml:space="preserve"><value>{0}项失败 · 显示最后数据</value></data>
+  <data name="TrayNoWindows" xml:space="preserve"><value>没有活动限制</value></data>
+  <data name="TrayPercentUsed" xml:space="preserve"><value>已用 {0}%</value></data>
+  <data name="TrayPercentRemaining" xml:space="preserve"><value>剩余 {0}%</value></data>
+  <data name="TrayLabeledPercentUsed" xml:space="preserve"><value>{0} 已用 {1}%</value></data>
+  <data name="TrayStatusFresh" xml:space="preserve"><value>正常</value></data>
+  <data name="TrayStatusChecking" xml:space="preserve"><value>检查中</value></data>
+  <data name="TrayStatusStale" xml:space="preserve"><value>已过期</value></data>
+  <data name="TrayStatusFailed" xml:space="preserve"><value>失败</value></data>
+  <data name="TrayWindowFiveHour" xml:space="preserve"><value>5小时</value></data>
+  <data name="TrayWindowWeekly" xml:space="preserve"><value>每周</value></data>
+  <data name="TraySettingsMenu" xml:space="preserve"><value>设置</value></data>
+  <data name="TrayHideWidget" xml:space="preserve"><value>隐藏小组件</value></data>
+  <data name="TrayShowWidget" xml:space="preserve"><value>显示小组件</value></data>
+  <data name="TrayOpenDashboard" xml:space="preserve"><value>打开仪表盘</value></data>
+  <data name="TrayRefreshNow" xml:space="preserve"><value>立即刷新</value></data>
+  <data name="TrayCopyDiagnosticLog" xml:space="preserve"><value>复制诊断日志</value></data>
+  <data name="TrayQuit" xml:space="preserve"><value>退出</value></data>
+  <data name="TrayTrackedModels" xml:space="preserve"><value>正在跟踪的模型</value></data>
+  <data name="TrayLanguageMenu" xml:space="preserve"><value>语言</value></data>
+  <data name="TrayLogCopied" xml:space="preserve"><value>已复制诊断日志</value></data>
+  <data name="TrayLogCopiedDetail" xml:space="preserve"><value>如果刷新持续失败，请在报告时粘贴它。</value></data>
+  <data name="TrayLogCopyFailed" xml:space="preserve"><value>无法复制日志</value></data>
+  <data name="LimitProfileCodex" xml:space="preserve"><value>Codex 限制</value></data>
+  <data name="LimitProfileClaude" xml:space="preserve"><value>Claude Code 限制</value></data>
+  <data name="LimitProfileAntigravity" xml:space="preserve"><value>Antigravity 分模型配额</value></data>
+  <data name="LimitProfileDefault" xml:space="preserve"><value>用量限制</value></data>
+  <data name="LimitProfileToolTipCodex" xml:space="preserve"><value>自动显示标准 Codex 限制，以及可用的命名额外桶。</value></data>
+  <data name="LimitProfileToolTipClaude" xml:space="preserve"><value>显示 Claude OAuth 当前会话，以及所有模型和 Sonnet 专用每周限制。</value></data>
+  <data name="LimitProfileToolTipAntigravity" xml:space="preserve"><value>分别显示可用的 Antigravity/Gemini 模型配额。</value></data>
+  <data name="LimitProfileToolTipDefault" xml:space="preserve"><value>提供方专用限制配置。</value></data>
+  <data name="ProviderStatusFresh" xml:space="preserve"><value>正常</value></data>
+  <data name="ProviderStatusRefreshing" xml:space="preserve"><value>检查中</value></data>
+  <data name="ProviderStatusStale" xml:space="preserve"><value>已过期</value></data>
+  <data name="ProviderStatusFailed" xml:space="preserve"><value>失败</value></data>
+  <data name="PrimaryNoWindow" xml:space="preserve"><value>无限制</value></data>
+  <data name="PrimaryNoReset" xml:space="preserve"><value>无重置</value></data>
+  <data name="NoValueBadgeText" xml:space="preserve"><value>无值</value></data>
+  <data name="NoValueBadgeToolTipText" xml:space="preserve"><value>无法获取可显示的限额值。请查看旁边的状态徽章了解原因。</value></data>
+  <data name="SourceBadgeCloud" xml:space="preserve"><value>云端</value></data>
+  <data name="SourceBadgeIdeFallback" xml:space="preserve"><value>IDE 回退</value></data>
+  <data name="SourceBadgeCloudToolTip" xml:space="preserve"><value>已从 Antigravity 云端获取用量数据。</value></data>
+  <data name="SourceBadgeIdeFallbackToolTip" xml:space="preserve"><value>云端不可达，已通过本地 Antigravity IDE 回退获取用量数据。</value></data>
+  <data name="OAuthClientOriginIde" xml:space="preserve"><value>Antigravity IDE 凭据</value></data>
+  <data name="OAuthClientOriginUserSaved" xml:space="preserve"><value>你保存的值</value></data>
+  <data name="OAuthClientOriginEnvironment" xml:space="preserve"><value>环境变量</value></data>
+  <data name="OAuthClientOriginNone" xml:space="preserve"><value>(无 — 过期时刷新失败)</value></data>
+  <data name="OAuthClientOriginTooltipPrefix" xml:space="preserve"><value>用于令牌刷新的 OAuth 客户端</value></data>
+  <data name="AntigravityOAuthActiveClientLabel" xml:space="preserve"><value>当前用于刷新</value></data>
+  <data name="AntigravityOAuthActiveClientNone" xml:space="preserve"><value>令牌刷新客户端：未设置（IDE 运行时通过回退获取 · 否则过期时刷新失败）</value></data>
+  <data name="CloudPrefix" xml:space="preserve"><value>云端</value></data>
+  <data name="IdeFallbackPrefix" xml:space="preserve"><value>IDE 回退</value></data>
+  <data name="AntigravityCauseHttp401" xml:space="preserve"><value>登录已过期</value></data>
+  <data name="AntigravityCauseTimeout" xml:space="preserve"><value>请求超时</value></data>
+  <data name="AntigravityCauseNoEndpoint" xml:space="preserve"><value>未找到正在运行的 Antigravity IDE</value></data>
+  <data name="AntigravityCauseEndpointNoQuota" xml:space="preserve"><value>IDE 已响应但未返回限额值</value></data>
+  <data name="AntigravityCauseInstallNotDetected" xml:space="preserve"><value>未检测到 Antigravity 安装</value></data>
+  <data name="AntigravityCauseOAuthClientSecretMissing" xml:space="preserve"><value>用于刷新令牌的 OAuth 客户端密钥缺失 (请启动 IDE 或在 设置 &gt; Antigravity OAuth 中保存值)</value></data>
+  <data name="AntigravityCauseOAuthClientIdMissing" xml:space="preserve"><value>用于刷新令牌的 OAuth 客户端 ID 缺失 (请启动 IDE 或在 设置 &gt; Antigravity OAuth 中保存值)</value></data>
+  <data name="AntigravityCauseSignInRequired" xml:space="preserve"><value>需要登录 Antigravity</value></data>
+  <data name="BadgeOAuthSetupRequired" xml:space="preserve"><value>需要 OAuth 设置</value></data>
+  <data name="BadgeAuthRequired" xml:space="preserve"><value>需要认证</value></data>
+  <data name="BadgeStartLoginRequired" xml:space="preserve"><value>需要启动/登录</value></data>
+  <data name="BadgeInstallLoginRequired" xml:space="preserve"><value>需要安装/登录</value></data>
+  <data name="BadgeTimedOut" xml:space="preserve"><value>超时</value></data>
+  <data name="BadgeNetworkIssue" xml:space="preserve"><value>网络问题</value></data>
+  <data name="BadgeParseFailed" xml:space="preserve"><value>响应解析失败</value></data>
+  <data name="BadgeIdeUnavailable" xml:space="preserve"><value>无 IDE</value></data>
+  <data name="BadgeNoQuotaData" xml:space="preserve"><value>没有限额信息</value></data>
+  <data name="BadgeNeedsReview" xml:space="preserve"><value>需要确认</value></data>
+  <data name="AutoRetryIn" xml:space="preserve"><value>{0} 分钟后自动重试</value></data>
+  <data name="ToolTipNoValue" xml:space="preserve"><value>提供方未返回可显示的用量值。</value></data>
+  <data name="ToolTipOAuthSetupRequired" xml:space="preserve"><value>要刷新 Cloud 凭据，请在 设置 &gt; Antigravity OAuth 中保存自己的客户端 ID 与密钥。如果 IDE 正在运行，会自动使用回退路径。</value></data>
+  <data name="ToolTipCloudTimeoutAntigravity" xml:space="preserve"><value>Cloud 刷新超时。如需尝试 IDE 回退路径，请打开 Antigravity IDE 后再次刷新。</value></data>
+  <data name="ToolTipAuthRequired" xml:space="preserve"><value>认证缺失或已过期。请重新登录后刷新。</value></data>
+  <data name="ToolTipAntigravityStartLogin" xml:space="preserve"><value>请启动 Antigravity，并确认已使用 Google 帐号登录后再刷新。</value></data>
+  <data name="ToolTipCodexInstallLogin" xml:space="preserve"><value>Codex 未安装或登录已过期。请安装 Codex 或重新登录后刷新。</value></data>
+  <data name="ToolTipAntigravityInstallLogin" xml:space="preserve"><value>Antigravity 未安装或登录已过期。请安装 Antigravity 或重新登录后刷新。</value></data>
+  <data name="ToolTipClaudeInstallLogin" xml:space="preserve"><value>Claude Code 未安装或登录已过期。请安装 Claude Code 或重新登录后刷新。</value></data>
+  <data name="ToolTipGenericFailure" xml:space="preserve"><value>无法加载用量。请再次刷新；如果仍然失败，请复制诊断日志并报告。</value></data>
+  <data name="ToolTipIdeUnavailableNoCloud" xml:space="preserve"><value>Quota Watch 尝试了 IDE 故障转移，但由于未找到正在运行的 Antigravity IDE，无法继续。请安装或启动 Antigravity IDE，然后刷新。</value></data>
+  <data name="ToolTipIdeUnavailableCloudFailed" xml:space="preserve"><value>云端查询失败后，Quota Watch 尝试了 IDE 故障转移，但由于未找到正在运行的 Antigravity IDE，无法继续。请安装或启动 Antigravity IDE，然后刷新。</value></data>
+  <data name="LastErrorClaudeInstallLogin" xml:space="preserve"><value>Claude Code 未安装或登录已过期。请安装 Claude Code 或重新登录后刷新。</value></data>
+  <data name="LastErrorNetwork" xml:space="preserve"><value>无法连接到提供方。请检查网络后重试。</value></data>
+  <data name="LastErrorParse" xml:space="preserve"><value>无法读取提供方响应。请在提供方状态稳定后再次刷新。</value></data>
+  <data name="LastErrorNoQuotaGeneric" xml:space="preserve"><value>提供方已有响应，但没有可显示的限额信息。</value></data>
+  <data name="LastErrorNoQuotaAntigravityNoEndpoint" xml:space="preserve"><value>没有 Antigravity 限额信息。由于找不到 IDE 端点，无法尝试 IDE 回退。</value></data>
+  <data name="LastErrorNoQuotaAntigravityIdeAttempted" xml:space="preserve"><value>没有 Antigravity 限额信息。已尝试 IDE 回退，但未返回限额信息。</value></data>
+  <data name="LastErrorNoQuotaAntigravityDefault" xml:space="preserve"><value>Antigravity 没有返回可显示的限额信息。</value></data>
+  <data name="LastErrorTimeout" xml:space="preserve"><value>用量刷新耗时过长。请稍后再次刷新。</value></data>
+  <data name="LastErrorAntigravityTimeout" xml:space="preserve"><value>Antigravity Cloud 刷新超时。如果 IDE 已打开，应用也可以尝试 IDE 回退路径。</value></data>
+  <data name="PercentUsedValue" xml:space="preserve"><value>{0}% 已用</value></data>
+  <data name="PercentLeftValue" xml:space="preserve"><value>{0}% 剩余</value></data>
+  <data name="ConfidenceValue" xml:space="preserve"><value>置信度: {0}</value></data>
+  <data name="SetupHintAntigravity" xml:space="preserve"><value>自动：先检查 Cloud，失败后回退到 IDE。Cloud 设置就是在 Antigravity 中使用 Google 登录。</value></data>
+  <data name="SetupHintClaude" xml:space="preserve"><value>使用 Claude Code OAuth 凭据。只需在 Claude Code 中登录一次，不需要一直保持 Claude Code 打开。</value></data>
+  <data name="ModeOptionAuto" xml:space="preserve"><value>自动</value></data>
+  <data name="ModeOptionBasic" xml:space="preserve"><value>基础</value></data>
+  <data name="ModeOptionProDetailed" xml:space="preserve"><value>Pro 详细</value></data>
+  <data name="LimitWarningTitle" xml:space="preserve"><value>AI 限制提醒</value></data>
+  <data name="LimitWarningWeeklyTitle" xml:space="preserve"><value>每周限制剩余不多</value></data>
+  <data name="LimitWarningSuppressWeekly" xml:space="preserve"><value>不再显示此每周提醒</value></data>
+  <data name="LimitWarningDismiss" xml:space="preserve"><value>关闭</value></data>
+  <data name="LimitWarningBodyUsedPercent" xml:space="preserve"><value>{0} {1}: 已用 {2}%。</value></data>
+  <data name="LimitWarningBodyRemaining" xml:space="preserve"><value>{0} {1}: 剩余 {2}%。</value></data>
+</root>

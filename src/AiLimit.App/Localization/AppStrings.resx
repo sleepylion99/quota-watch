@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AntigravityOAuthClientIdLabel" xml:space="preserve"><value>Client ID</value></data>
+  <data name="AntigravityOAuthClientSecretLabel" xml:space="preserve"><value>Client secret</value></data>
+  <data name="AntigravityOAuthDetail" xml:space="preserve"><value>For IDE-off refresh, create an OAuth Desktop app in Google Cloud, then paste your own {0} and {1} here. They are securely encrypted on this device.</value></data>
+  <data name="AntigravityOAuthMissingInput" xml:space="preserve"><value>{0} and {1} are required.</value></data>
+  <data name="AntigravityOAuthSaved" xml:space="preserve"><value>Client values are securely encrypted and saved.</value></data>
+  <data name="AntigravityOAuthSaveFailed" xml:space="preserve"><value>Could not save client values.</value></data>
+  <data name="AntigravityOAuthCleared" xml:space="preserve"><value>Saved client values cleared.</value></data>
+  <data name="AntigravityOAuthClearFailed" xml:space="preserve"><value>Could not clear client values.</value></data>
+  <data name="AntigravityOAuthLoadFailed" xml:space="preserve"><value>Could not load saved client values.</value></data>
+  <data name="AntigravityOAuthSavedExists" xml:space="preserve"><value>Client values are securely encrypted and saved.</value></data>
+  <data name="AntigravityOAuthMissing" xml:space="preserve"><value>No saved client values.</value></data>
+  <data name="AntigravityOAuthSettingsLabel" xml:space="preserve"><value>Settings &gt; Antigravity OAuth</value></data>
+  <data name="AntigravityMissingOAuthClientError" xml:space="preserve"><value>Antigravity token refresh needs your OAuth client values. Open {0}, save your {1} and {2}, then refresh again.</value></data>
+  <data name="AntigravityCloudSetupError" xml:space="preserve"><value>Sign in to Antigravity with your Google account first. If Cloud is unavailable, open the Antigravity IDE and refresh again.</value></data>
+  <data name="AntigravityOAuthSaveButtonText" xml:space="preserve"><value>Save</value></data>
+  <data name="AntigravityOAuthClearButtonText" xml:space="preserve"><value>Clear</value></data>
+  <data name="AntigravityOAuthGuideButtonText" xml:space="preserve"><value>View setup guide</value></data>
+  <data name="AntigravityOAuthGuideOpenFailed" xml:space="preserve"><value>Could not open the setup guide.</value></data>
+  <data name="AppTagline" xml:space="preserve"><value>Windows control room</value></data>
+  <data name="TrackedLabel" xml:space="preserve"><value>Tracked</value></data>
+  <data name="OverallStatusLabel" xml:space="preserve"><value>Overall status</value></data>
+  <data name="LastCheckedLabel" xml:space="preserve"><value>Last checked</value></data>
+  <data name="HeaderSubtitleNoData" xml:space="preserve"><value>No provider data yet</value></data>
+  <data name="StatusRefreshing" xml:space="preserve"><value>Refreshing...</value></data>
+  <data name="StatusNotRefreshed" xml:space="preserve"><value>Not refreshed</value></data>
+  <data name="StatusAllFresh" xml:space="preserve"><value>All fresh</value></data>
+  <data name="StatusFailed" xml:space="preserve"><value>{0} failed</value></data>
+  <data name="CheckedAtNever" xml:space="preserve"><value>Never</value></data>
+  <data name="ResetUnavailable" xml:space="preserve"><value>Reset unavailable</value></data>
+  <data name="ResetAt" xml:space="preserve"><value>Resets {0:g}</value></data>
+  <data name="NotActiveInSession" xml:space="preserve"><value>Not active in session</value></data>
+  <data name="GuidanceRefreshingTitle" xml:space="preserve"><value>Checking latest usage</value></data>
+  <data name="GuidanceRefreshingDetail" xml:space="preserve"><value>Your limit status will update in a moment.</value></data>
+  <data name="GuidanceRefreshingAction" xml:space="preserve"><value>Previous data stays visible when available.</value></data>
+  <data name="GuidanceNoDataTitle" xml:space="preserve"><value>Refresh to load usage</value></data>
+  <data name="GuidanceNoDataDetail" xml:space="preserve"><value>No usage data is loaded yet.</value></data>
+  <data name="GuidanceNoDataAction" xml:space="preserve"><value>Use Refresh All to check your current limits.</value></data>
+  <data name="GuidanceNoDataWidget" xml:space="preserve"><value>Refresh to load usage</value></data>
+  <data name="GuidanceFailedTitle" xml:space="preserve"><value>Could not refresh everything</value></data>
+  <data name="GuidanceFailedDetail" xml:space="preserve"><value>Last known data remains visible where possible.</value></data>
+  <data name="GuidanceFailedAction" xml:space="preserve"><value>Try Refresh All again or check provider setup.</value></data>
+  <data name="GuidanceFailedWidget" xml:space="preserve"><value>Refresh failed · retry</value></data>
+  <data name="GuidanceStaleTitle" xml:space="preserve"><value>Usage may be out of date</value></data>
+  <data name="GuidanceStaleDetail" xml:space="preserve"><value>The last saved data is still shown.</value></data>
+  <data name="GuidanceStaleAction" xml:space="preserve"><value>Refresh when convenient.</value></data>
+  <data name="GuidanceStaleWidget" xml:space="preserve"><value>Data may be old</value></data>
+  <data name="GuidanceFreshTitle" xml:space="preserve"><value>Usage is up to date</value></data>
+  <data name="GuidanceFreshDetail" xml:space="preserve"><value>All tracked models are reporting normally.</value></data>
+  <data name="GuidanceFreshAction" xml:space="preserve"><value>You can keep working.</value></data>
+  <data name="GuidanceFreshWidget" xml:space="preserve"><value>Up to date · keep working</value></data>
+  <data name="FiveHourModeText" xml:space="preserve"><value>5h limit</value></data>
+  <data name="WeeklyModeText" xml:space="preserve"><value>Weekly limit</value></data>
+  <data name="BothModeText" xml:space="preserve"><value>5h + weekly</value></data>
+  <data name="BarsModeText" xml:space="preserve"><value>Graph view</value></data>
+  <data name="ToggleWidgetButtonText" xml:space="preserve"><value>Toggle Widget</value></data>
+  <data name="DashboardButtonText" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="SettingsButtonText" xml:space="preserve"><value>Settings</value></data>
+  <data name="RefreshButtonText" xml:space="preserve"><value>Refresh</value></data>
+  <data name="RefreshAllButtonText" xml:space="preserve"><value>Refresh All</value></data>
+  <data name="HideButtonText" xml:space="preserve"><value>Hide</value></data>
+  <data name="TrackProviderLabel" xml:space="preserve"><value>Track</value></data>
+  <data name="SettingsPanelDetailText" xml:space="preserve"><value>Adjust dashboard behavior and support actions in one place.</value></data>
+  <data name="SettingsApplyButtonText" xml:space="preserve"><value>Apply</value></data>
+  <data name="SettingsCloseButtonText" xml:space="preserve"><value>Close</value></data>
+  <data name="SettingsImmediateApplyText" xml:space="preserve"><value>Apply saves your pending changes.</value></data>
+  <data name="SettingsUnsavedTitleText" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="SettingsUnsavedDetailText" xml:space="preserve"><value>Close settings without saving changes?</value></data>
+  <data name="SettingsDiscardButtonText" xml:space="preserve"><value>Discard</value></data>
+  <data name="SettingsKeepEditingButtonText" xml:space="preserve"><value>Back</value></data>
+  <data name="ModelSettingsButtonText" xml:space="preserve"><value>Model Settings</value></data>
+  <data name="ModelSettingsDetailText" xml:space="preserve"><value>Choose which providers appear on the dashboard.</value></data>
+  <data name="LanguageSettingsTitleText" xml:space="preserve"><value>Language</value></data>
+  <data name="LanguageSettingsDetailText" xml:space="preserve"><value>Follow the system language by default, or choose a specific dashboard language.</value></data>
+  <data name="ThemeSettingsTitleText" xml:space="preserve"><value>Theme</value></data>
+  <data name="ThemeSettingsDetailText" xml:space="preserve"><value>Choose how the dashboard looks.</value></data>
+  <data name="ThemeOptionDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="ThemeOptionLight" xml:space="preserve"><value>Light</value></data>
+  <data name="ThemeOptionSystem" xml:space="preserve"><value>Auto</value></data>
+  <data name="ThemeSystemHintText" xml:space="preserve"><value>Auto follows your Windows app theme.</value></data>
+  <data name="LimitWarningSettingsTitleText" xml:space="preserve"><value>Limit alerts</value></data>
+  <data name="LimitWarningSettingsDetailText" xml:space="preserve"><value>Remaining-limit providers alert below the threshold. Usage-based providers alert above the matching used percent.</value></data>
+  <data name="LimitWarningEnabledText" xml:space="preserve"><value>Enable limit alerts</value></data>
+  <data name="LimitWarningThresholdText" xml:space="preserve"><value>Alert threshold</value></data>
+  <data name="LimitWarningThresholdOption" xml:space="preserve"><value>{0}% left / {1}% used</value></data>
+  <data name="LimitWarningCustomThresholdLabel" xml:space="preserve"><value>Custom:</value></data>
+  <data name="UpdateCheckTitleText" xml:space="preserve"><value>Updates</value></data>
+  <data name="UpdateCheckDetailText" xml:space="preserve"><value>Check whether a newer release is available.</value></data>
+  <data name="CheckForUpdatesButtonText" xml:space="preserve"><value>Check for Updates</value></data>
+  <data name="DiagnosticLogTitleText" xml:space="preserve"><value>Diagnostic log</value></data>
+  <data name="DiagnosticLogDetailText" xml:space="preserve"><value>Found a bug? Copy this log and send it to the developer.</value></data>
+  <data name="CopyDiagnosticLogButtonText" xml:space="preserve"><value>Copy Log</value></data>
+  <data name="TrayRefreshToLoad" xml:space="preserve"><value>Refresh to load usage</value></data>
+  <data name="TrayFailed" xml:space="preserve"><value>{0} failed · last data shown</value></data>
+  <data name="TrayNoWindows" xml:space="preserve"><value>No active limit windows</value></data>
+  <data name="TrayPercentUsed" xml:space="preserve"><value>{0}% used</value></data>
+  <data name="TrayPercentRemaining" xml:space="preserve"><value>{0}% left</value></data>
+  <data name="TrayLabeledPercentUsed" xml:space="preserve"><value>{0} {1}% used</value></data>
+  <data name="TrayStatusFresh" xml:space="preserve"><value>fresh</value></data>
+  <data name="TrayStatusChecking" xml:space="preserve"><value>checking</value></data>
+  <data name="TrayStatusStale" xml:space="preserve"><value>stale</value></data>
+  <data name="TrayStatusFailed" xml:space="preserve"><value>failed</value></data>
+  <data name="TrayWindowFiveHour" xml:space="preserve"><value>5h</value></data>
+  <data name="TrayWindowWeekly" xml:space="preserve"><value>weekly</value></data>
+  <data name="TraySettingsMenu" xml:space="preserve"><value>Settings</value></data>
+  <data name="TrayHideWidget" xml:space="preserve"><value>Hide Widget</value></data>
+  <data name="TrayShowWidget" xml:space="preserve"><value>Show Widget</value></data>
+  <data name="TrayOpenDashboard" xml:space="preserve"><value>Open Dashboard</value></data>
+  <data name="TrayRefreshNow" xml:space="preserve"><value>Refresh Now</value></data>
+  <data name="TrayCopyDiagnosticLog" xml:space="preserve"><value>Copy Diagnostic Log</value></data>
+  <data name="TrayQuit" xml:space="preserve"><value>Quit</value></data>
+  <data name="TrayTrackedModels" xml:space="preserve"><value>Tracked models</value></data>
+  <data name="TrayLanguageMenu" xml:space="preserve"><value>Language</value></data>
+  <data name="TrayLogCopied" xml:space="preserve"><value>Diagnostic log copied</value></data>
+  <data name="TrayLogCopiedDetail" xml:space="preserve"><value>Paste it into your bug report if refresh keeps failing.</value></data>
+  <data name="TrayLogCopyFailed" xml:space="preserve"><value>Could not copy log</value></data>
+  <data name="LimitProfileCodex" xml:space="preserve"><value>Codex limits</value></data>
+  <data name="LimitProfileClaude" xml:space="preserve"><value>Claude Code limits</value></data>
+  <data name="LimitProfileAntigravity" xml:space="preserve"><value>Antigravity model quotas</value></data>
+  <data name="LimitProfileDefault" xml:space="preserve"><value>Usage limits</value></data>
+  <data name="LimitProfileToolTipCodex" xml:space="preserve"><value>Automatically shows standard Codex windows and named extra buckets when available.</value></data>
+  <data name="LimitProfileToolTipClaude" xml:space="preserve"><value>Shows Claude OAuth current session plus all-models and Sonnet-only weekly limits when available.</value></data>
+  <data name="LimitProfileToolTipAntigravity" xml:space="preserve"><value>Shows each Antigravity/Gemini model quota separately when available.</value></data>
+  <data name="LimitProfileToolTipDefault" xml:space="preserve"><value>Provider-specific limit profile.</value></data>
+  <data name="ProviderStatusFresh" xml:space="preserve"><value>Fresh</value></data>
+  <data name="ProviderStatusRefreshing" xml:space="preserve"><value>Refreshing</value></data>
+  <data name="ProviderStatusStale" xml:space="preserve"><value>Stale</value></data>
+  <data name="ProviderStatusFailed" xml:space="preserve"><value>Failed</value></data>
+  <data name="PrimaryNoWindow" xml:space="preserve"><value>No window</value></data>
+  <data name="PrimaryNoReset" xml:space="preserve"><value>No reset</value></data>
+  <data name="NoValueBadgeText" xml:space="preserve"><value>No value</value></data>
+  <data name="NoValueBadgeToolTipText" xml:space="preserve"><value>No quota value could be displayed. Check the adjacent status badge for the reason.</value></data>
+  <data name="SourceBadgeCloud" xml:space="preserve"><value>Cloud</value></data>
+  <data name="SourceBadgeIdeFallback" xml:space="preserve"><value>IDE fallback</value></data>
+  <data name="SourceBadgeCloudToolTip" xml:space="preserve"><value>Usage data was fetched from Antigravity Cloud.</value></data>
+  <data name="SourceBadgeIdeFallbackToolTip" xml:space="preserve"><value>Cloud was unreachable, so usage data was fetched from the local Antigravity IDE fallback.</value></data>
+  <data name="OAuthClientOriginIde" xml:space="preserve"><value>Antigravity IDE credentials</value></data>
+  <data name="OAuthClientOriginUserSaved" xml:space="preserve"><value>Your saved values</value></data>
+  <data name="OAuthClientOriginEnvironment" xml:space="preserve"><value>Environment variables</value></data>
+  <data name="OAuthClientOriginNone" xml:space="preserve"><value>(none — refresh will fail when expired)</value></data>
+  <data name="OAuthClientOriginTooltipPrefix" xml:space="preserve"><value>OAuth client used for token refresh</value></data>
+  <data name="AntigravityOAuthActiveClientLabel" xml:space="preserve"><value>Currently used for refresh</value></data>
+  <data name="AntigravityOAuthActiveClientNone" xml:space="preserve"><value>Token refresh client: not set (uses IDE fallback when running · otherwise refresh fails when expired)</value></data>
+  <data name="CloudPrefix" xml:space="preserve"><value>Cloud</value></data>
+  <data name="IdeFallbackPrefix" xml:space="preserve"><value>IDE fallback</value></data>
+  <data name="AntigravityCauseHttp401" xml:space="preserve"><value>your sign-in has expired</value></data>
+  <data name="AntigravityCauseTimeout" xml:space="preserve"><value>the request did not return in time</value></data>
+  <data name="AntigravityCauseNoEndpoint" xml:space="preserve"><value>no running Antigravity IDE was found</value></data>
+  <data name="AntigravityCauseEndpointNoQuota" xml:space="preserve"><value>the IDE responded but did not return quota</value></data>
+  <data name="AntigravityCauseInstallNotDetected" xml:space="preserve"><value>Antigravity does not appear to be installed</value></data>
+  <data name="AntigravityCauseOAuthClientSecretMissing" xml:space="preserve"><value>OAuth client secret for token refresh is missing (open the IDE or save values in Settings &gt; Antigravity OAuth)</value></data>
+  <data name="AntigravityCauseOAuthClientIdMissing" xml:space="preserve"><value>OAuth client ID for token refresh is missing (open the IDE or save values in Settings &gt; Antigravity OAuth)</value></data>
+  <data name="AntigravityCauseSignInRequired" xml:space="preserve"><value>sign-in to Antigravity is required</value></data>
+  <data name="BadgeOAuthSetupRequired" xml:space="preserve"><value>OAuth setup required</value></data>
+  <data name="BadgeAuthRequired" xml:space="preserve"><value>Auth required</value></data>
+  <data name="BadgeStartLoginRequired" xml:space="preserve"><value>Start/login required</value></data>
+  <data name="BadgeInstallLoginRequired" xml:space="preserve"><value>Install/login required</value></data>
+  <data name="BadgeTimedOut" xml:space="preserve"><value>Timed out</value></data>
+  <data name="BadgeNetworkIssue" xml:space="preserve"><value>Network issue</value></data>
+  <data name="BadgeParseFailed" xml:space="preserve"><value>Parse failed</value></data>
+  <data name="BadgeIdeUnavailable" xml:space="preserve"><value>IDE unavailable</value></data>
+  <data name="BadgeNoQuotaData" xml:space="preserve"><value>No quota data</value></data>
+  <data name="BadgeNeedsReview" xml:space="preserve"><value>Needs review</value></data>
+  <data name="AutoRetryIn" xml:space="preserve"><value>Auto retry in {0} min</value></data>
+  <data name="ToolTipNoValue" xml:space="preserve"><value>The provider returned no usage value.</value></data>
+  <data name="ToolTipOAuthSetupRequired" xml:space="preserve"><value>To refresh Cloud auth, save your own client ID and secret in Settings &gt; Antigravity OAuth. If the IDE is running, Quota Watch will use the fallback path automatically.</value></data>
+  <data name="ToolTipCloudTimeoutAntigravity" xml:space="preserve"><value>Cloud refresh timed out. Open Antigravity IDE if you want to try the IDE fallback path, then refresh again.</value></data>
+  <data name="ToolTipAuthRequired" xml:space="preserve"><value>Authentication is missing or expired. Sign in again, then refresh.</value></data>
+  <data name="ToolTipAntigravityStartLogin" xml:space="preserve"><value>Open Antigravity and make sure you are signed in with your Google account, then refresh.</value></data>
+  <data name="ToolTipCodexInstallLogin" xml:space="preserve"><value>Codex is not installed or the login has expired. Install Codex or sign in again, then refresh.</value></data>
+  <data name="ToolTipAntigravityInstallLogin" xml:space="preserve"><value>Antigravity is not installed or the login has expired. Install Antigravity or sign in again, then refresh.</value></data>
+  <data name="ToolTipClaudeInstallLogin" xml:space="preserve"><value>Claude Code is not installed or the login has expired. Install Claude Code or sign in again, then refresh.</value></data>
+  <data name="ToolTipGenericFailure" xml:space="preserve"><value>Usage could not be loaded. Try refreshing again, and if it keeps failing, copy the diagnostic log and report it.</value></data>
+  <data name="ToolTipIdeUnavailableNoCloud" xml:space="preserve"><value>Quota Watch tried IDE failover, but it could not continue because no running Antigravity IDE was found. Install or start Antigravity IDE, then refresh.</value></data>
+  <data name="ToolTipIdeUnavailableCloudFailed" xml:space="preserve"><value>Cloud lookup failed, so Quota Watch tried IDE failover. It could not continue because no running Antigravity IDE was found. Install or start Antigravity IDE, then refresh.</value></data>
+  <data name="LastErrorClaudeInstallLogin" xml:space="preserve"><value>Claude Code is not installed or the login has expired. Install Claude Code or sign in again, then refresh.</value></data>
+  <data name="LastErrorNetwork" xml:space="preserve"><value>The provider could not be reached. Check your network and try again.</value></data>
+  <data name="LastErrorParse" xml:space="preserve"><value>The provider response could not be read. Refresh again after the provider is stable.</value></data>
+  <data name="LastErrorNoQuotaGeneric" xml:space="preserve"><value>The provider responded, but no quota data was available.</value></data>
+  <data name="LastErrorNoQuotaAntigravityNoEndpoint" xml:space="preserve"><value>No Antigravity quota data was available. IDE fallback could not be attempted because no IDE endpoint was found.</value></data>
+  <data name="LastErrorNoQuotaAntigravityIdeAttempted" xml:space="preserve"><value>No Antigravity quota data was available. IDE fallback was attempted but returned no quota data.</value></data>
+  <data name="LastErrorNoQuotaAntigravityDefault" xml:space="preserve"><value>No Antigravity quota data was available.</value></data>
+  <data name="LastErrorTimeout" xml:space="preserve"><value>The usage refresh took too long. Try refreshing again in a moment.</value></data>
+  <data name="LastErrorAntigravityTimeout" xml:space="preserve"><value>Antigravity Cloud refresh timed out. Open Antigravity IDE if you want to retry through the IDE fallback path.</value></data>
+  <data name="PercentUsedValue" xml:space="preserve"><value>{0}% used</value></data>
+  <data name="PercentLeftValue" xml:space="preserve"><value>{0}% left</value></data>
+  <data name="ConfidenceValue" xml:space="preserve"><value>Confidence: {0}</value></data>
+  <data name="SetupHintAntigravity" xml:space="preserve"><value>Automatic: Cloud first, then IDE fallback. Cloud uses stored Antigravity OAuth tokens. Expired tokens need stored OAuth client values or explicit ANTIGRAVITY_OAUTH_CLIENT_ID and ANTIGRAVITY_OAUTH_CLIENT_SECRET to refresh without the IDE.</value></data>
+  <data name="SetupHintClaude" xml:space="preserve"><value>Uses Claude Code OAuth credentials. Sign in with Claude Code once; Claude Code does not need to stay open.</value></data>
+  <data name="ModeOptionAuto" xml:space="preserve"><value>Auto</value></data>
+  <data name="ModeOptionBasic" xml:space="preserve"><value>Basic</value></data>
+  <data name="ModeOptionProDetailed" xml:space="preserve"><value>Pro detailed</value></data>
+  <data name="LimitWarningTitle" xml:space="preserve"><value>AI limit alert</value></data>
+  <data name="LimitWarningWeeklyTitle" xml:space="preserve"><value>Weekly limit is low</value></data>
+  <data name="LimitWarningSuppressWeekly" xml:space="preserve"><value>Don't show this weekly alert again</value></data>
+  <data name="LimitWarningDismiss" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="LimitWarningBodyUsedPercent" xml:space="preserve"><value>{0} {1}: {2}% used.</value></data>
+  <data name="LimitWarningBodyRemaining" xml:space="preserve"><value>{0} {1}: {2}% left.</value></data>
+</root>

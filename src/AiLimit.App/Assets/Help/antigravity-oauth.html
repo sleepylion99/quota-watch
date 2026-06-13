@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quota Watch - Antigravity OAuth Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #172033;
+      --muted: #5e687a;
+      --line: #d9e1ec;
+      --accent: #315efb;
+      --accent-soft: #e9efff;
+      --warn: #914700;
+      --warn-bg: #fff3dc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", "Malgun Gothic", "Yu Gothic UI", sans-serif;
+      line-height: 1.65;
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 40px auto;
+    }
+
+    h1, h2, h3 { line-height: 1.3; }
+    h1 { margin: 0 0 8px; }
+    h2 { margin: 40px 0 16px; }
+    p { margin: 8px 0; }
+    code {
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: #eef1f6;
+      font-family: Consolas, monospace;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+
+    .language-control {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    select {
+      padding: 7px 30px 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .notice, .warning {
+      margin: 22px 0;
+      padding: 16px 18px;
+      border-radius: 12px;
+    }
+
+    .notice {
+      border: 1px solid #b9c9ff;
+      background: var(--accent-soft);
+      font-weight: 700;
+    }
+
+    .warning {
+      border: 1px solid #efc579;
+      background: var(--warn-bg);
+      color: var(--warn);
+      font-weight: 700;
+    }
+
+    .flow, .steps {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+
+    .flow li {
+      position: relative;
+      display: flex;
+      min-height: 112px;
+      padding: 14px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .arrow {
+      position: absolute;
+      right: -15px;
+      z-index: 1;
+      color: var(--accent);
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .steps {
+      display: grid;
+      gap: 16px;
+      counter-reset: guide-step;
+    }
+
+    .step {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card);
+      box-shadow: 0 7px 20px rgb(23 32 51 / 6%);
+      counter-increment: guide-step;
+    }
+
+    .step h3 {
+      display: flex;
+      gap: 10px;
+      margin: 0 0 8px;
+      align-items: center;
+    }
+
+    .step h3::before {
+      content: counter(guide-step);
+      display: inline-grid;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .path {
+      margin-top: 12px;
+      padding: 11px 13px;
+      border-left: 4px solid var(--accent);
+      background: #f6f8fc;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin: 28px 0;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 11px 15px;
+      border-radius: 9px;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .button.secondary {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--ink);
+    }
+
+    footer {
+      margin-top: 38px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    figure.shot {
+      margin: 14px 0 0;
+      padding: 0;
+    }
+
+    figure.shot svg {
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      display: block;
+    }
+
+    figure.shot figcaption {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    table.troubleshoot {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 15px;
+    }
+
+    table.troubleshoot th,
+    table.troubleshoot td {
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    table.troubleshoot th {
+      background: var(--accent-soft);
+      font-weight: 700;
+    }
+
+    table.troubleshoot code { font-size: 13px; }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+        --bg: #0f1420;
+        --card: #161d2b;
+        --ink: #e7ecf5;
+        --muted: #9aa6ba;
+        --line: #29334a;
+        --accent: #5b82ff;
+        --accent-soft: #1b2748;
+        --warn: #ffcf8a;
+        --warn-bg: #3a2b12;
+      }
+
+      code { background: #1f2a3f; }
+      .path { background: #1a2336; }
+      .step { box-shadow: 0 7px 20px rgb(0 0 0 / 35%); }
+    }
+
+    @media (max-width: 720px) {
+      main { margin: 22px auto; }
+      .toolbar { justify-content: flex-start; }
+      .flow { grid-template-columns: 1fr; }
+      .flow li { min-height: auto; }
+      .arrow {
+        right: 50%;
+        bottom: -22px;
+        transform: translateX(50%) rotate(90deg);
+      }
+      .step { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="toolbar">
+      <label class="language-control" for="language-selector">
+        <span data-i18n="languageLabel">Language</span>
+        <select id="language-selector">
+          <option value="en">English</option>
+          <option value="ko">한국어</option>
+          <option value="ja">日本語</option>
+          <option value="zh">中文</option>
+        </select>
+      </label>
+    </div>
+
+    <header>
+      <h1 data-i18n="title">Antigravity OAuth setup guide</h1>
+      <p data-i18n="intro">Create an OAuth client so Quota Watch can read Antigravity usage from Google Cloud.</p>
+      <div class="notice" data-i18n="optionalNotice">Optional: You do not need this setup when Antigravity IDE is running.</div>
+    </header>
+
+    <section aria-labelledby="overview-title">
+      <h2 id="overview-title" data-i18n="overviewTitle">Setup overview</h2>
+      <ol class="flow" data-i18n-aria-label="overviewAria">
+        <li><span data-i18n="flowProject">Select or create a project</span><span class="arrow" aria-hidden="true">→</span></li>
+        <li><span data-i18n="flowAuth">Register Google Auth</span><span class="arrow" aria-hidden="true">→</span></li>
+        <li><span data-i18n="flowClient">Create client</span><span class="arrow" aria-hidden="true">→</span></li>
+        <li><span data-i18n="flowDesktop">Choose Desktop app</span><span class="arrow" aria-hidden="true">→</span></li>
+        <li><span data-i18n="flowCopy">Copy ID and Secret</span><span class="arrow" aria-hidden="true">→</span></li>
+        <li><span data-i18n="flowSave">Save in Quota Watch</span></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="steps-title">
+      <h2 id="steps-title" data-i18n="stepsTitle">Step-by-step instructions</h2>
+      <ol class="steps">
+        <li class="step">
+          <h3 data-i18n="step1Title">Select or create a Google Cloud project</h3>
+          <p data-i18n="step1Body">Sign in to Google Cloud Console and use the project selector at the top. Choose an existing project or create a new one.</p>
+          <div class="path" data-i18n="step1Path">Search terms: Project selector, New project</div>
+        </li>
+        <li class="step">
+          <h3 data-i18n="step2Title">Complete Google Auth registration if needed</h3>
+          <p data-i18n="step2Body">For a project using OAuth for the first time, follow Google Auth Platform to register the app name and support email. Skip this step if registration is already complete.</p>
+          <div class="path" data-i18n="step2Path">Menu or search terms: Google Auth Platform, Branding, Audience</div>
+          <div class="warning" data-i18n="publishWarn">Important: If the OAuth consent screen stays in Testing mode, refresh tokens expire after 7 days and Quota Watch will fail to refresh. Add your own Google account under Audience &gt; Test users, or set Publishing status to In production.</div>
+        </li>
+        <li class="step">
+          <h3 data-i18n="step3Title">Create an OAuth client</h3>
+          <p data-i18n="step3Body">Open Clients and select Create client.</p>
+          <div class="path" data-i18n="step3Path">Path: Google Auth Platform → Clients → Create client</div>
+        </li>
+        <li class="step">
+          <h3 data-i18n="step4Title">Choose the application type</h3>
+          <p data-i18n="step4Body">For Application type, choose Desktop app, enter a recognizable name, and create the client.</p>
+          <div class="path" data-i18n="step4Path">Required selection: Application type: Desktop app</div>
+          <figure class="shot">
+            <svg viewBox="0 0 560 196" role="img" aria-labelledby="shot4-title">
+              <title id="shot4-title">Application type dropdown with Desktop app selected</title>
+              <text x="20" y="28" style="fill:var(--muted)" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700">Application type</text>
+              <rect x="20" y="38" width="520" height="34" rx="7" style="fill:var(--card);stroke:var(--accent);stroke-width:2"></rect>
+              <text x="34" y="60" style="fill:var(--ink)" font-family="Segoe UI, sans-serif" font-size="14">Desktop app</text>
+              <path d="M520 51 l8 8 l8 -8" style="fill:none;stroke:var(--muted);stroke-width:2"></path>
+              <rect x="20" y="80" width="520" height="104" rx="9" style="fill:var(--card);stroke:var(--line);stroke-width:1"></rect>
+              <text x="34" y="104" style="fill:var(--muted)" font-family="Segoe UI, sans-serif" font-size="14">Web application</text>
+              <rect x="24" y="114" width="512" height="30" rx="6" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5"></rect>
+              <text x="34" y="134" style="fill:var(--ink)" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700">Desktop app</text>
+              <path d="M505 129 l6 6 l11 -13" style="fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"></path>
+              <text x="34" y="164" style="fill:var(--muted)" font-family="Segoe UI, sans-serif" font-size="14">Android / iOS / TVs and Limited Input</text>
+            </svg>
+            <figcaption data-i18n="shot4Caption">In the Application type list, pick Desktop app.</figcaption>
+          </figure>
+        </li>
+        <li class="step">
+          <h3 data-i18n="step5Title">Copy Client ID and Client Secret</h3>
+          <p data-i18n="step5Body">Copy the Client ID and Client Secret shown after creation and keep them in a secure place.</p>
+          <div class="warning" data-i18n="secretWarning">The full Client Secret may only be visible when it is created. Store it securely before closing the window.</div>
+        </li>
+        <li class="step">
+          <h3 data-i18n="step6Title">Paste the values into Quota Watch and save</h3>
+          <p data-i18n="step6Body">In Quota Watch settings, find Antigravity OAuth, paste the Client ID and Client Secret, and save. Refresh to check the status.</p>
+          <div class="path" data-i18n="step6Path">Quota Watch: Settings → Antigravity OAuth → Save</div>
+          <div class="notice" data-i18n="securityNote">Your Client ID and Secret are encrypted with Windows DPAPI and stored only on this device. They are never sent anywhere except Google's token endpoint when refreshing.</div>
+        </li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="troubleshoot-title">
+      <h2 id="troubleshoot-title" data-i18n="troubleshootTitle">Troubleshooting</h2>
+      <table class="troubleshoot">
+        <thead>
+          <tr>
+            <th data-i18n="tsColSymptom">Symptom</th>
+            <th data-i18n="tsColCause">Likely cause</th>
+            <th data-i18n="tsColFix">Fix</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-i18n="ts1Symptom">Refresh fails after about 7 days</td>
+            <td data-i18n="ts1Cause">Consent screen is still in Testing mode</td>
+            <td data-i18n="ts1Fix">Add your account under Test users, or set Publishing status to In production.</td>
+          </tr>
+          <tr>
+            <td><code>invalid_client</code> / HTTP 401</td>
+            <td data-i18n="ts2Cause">Client ID or Secret is wrong, or the Secret was rotated</td>
+            <td data-i18n="ts2Fix">Re-copy both values from the same OAuth client and save again.</td>
+          </tr>
+          <tr>
+            <td><code>access_denied</code></td>
+            <td data-i18n="ts3Cause">Your Google account is not allowed for this client</td>
+            <td data-i18n="ts3Fix">Add the account as a Test user, or sign in with the account that owns the project.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <nav class="actions" data-i18n-aria-label="linksAria">
+      <a class="button" href="https://console.cloud.google.com/auth/clients" data-i18n="consoleLink">Open Google Cloud Clients</a>
+      <a id="official-help-link" class="button secondary" href="https://support.google.com/cloud/answer/6158849?hl=en" data-i18n="officialHelpLink">Open Google official help</a>
+    </nav>
+
+    <footer>
+      <p data-i18n="lastChecked">Last checked: 2026-06-06</p>
+      <p data-i18n="footerGuidance">If the Google Cloud screen looks different, use the menu names or search terms in this guide.</p>
+    </footer>
+  </main>
+
+  <script>
+    "use strict";
+
+    const translations = {
+      en: {
+        pageTitle: "Quota Watch - Antigravity OAuth Guide",
+        languageLabel: "Language",
+        title: "Antigravity OAuth setup guide",
+        intro: "Create an OAuth client so Quota Watch can read Antigravity usage from Google Cloud.",
+        optionalNotice: "Optional: You do not need this setup when Antigravity IDE is running.",
+        overviewTitle: "Setup overview",
+        overviewAria: "OAuth setup overview",
+        flowProject: "Select or create a project",
+        flowAuth: "Register Google Auth",
+        flowClient: "Create client",
+        flowDesktop: "Choose Desktop app",
+        flowCopy: "Copy ID and Secret",
+        flowSave: "Save in Quota Watch",
+        stepsTitle: "Step-by-step instructions",
+        step1Title: "Select or create a Google Cloud project",
+        step1Body: "Sign in to Google Cloud Console and use the project selector at the top. Choose an existing project or create a new one.",
+        step1Path: "Search terms: Project selector, New project",
+        step2Title: "Complete Google Auth registration if needed",
+        step2Body: "For a project using OAuth for the first time, follow Google Auth Platform to register the app name and support email. Skip this step if registration is already complete.",
+        step2Path: "Menu or search terms: Google Auth Platform, Branding, Audience",
+        step3Title: "Create an OAuth client",
+        step3Body: "Open Clients and select Create client.",
+        step3Path: "Path: Google Auth Platform → Clients → Create client",
+        step4Title: "Choose the application type",
+        step4Body: "For Application type, choose Desktop app, enter a recognizable name, and create the client.",
+        step4Path: "Required selection: Application type: Desktop app",
+        step5Title: "Copy Client ID and Client Secret",
+        step5Body: "Copy the Client ID and Client Secret shown after creation and keep them in a secure place.",
+        secretWarning: "The full Client Secret may only be visible when it is created. Store it securely before closing the window.",
+        step6Title: "Paste the values into Quota Watch and save",
+        step6Body: "In Quota Watch settings, find Antigravity OAuth, paste the Client ID and Client Secret, and save. Refresh to check the status.",
+        step6Path: "Quota Watch: Settings → Antigravity OAuth → Save",
+        publishWarn: "Important: If the OAuth consent screen stays in Testing mode, refresh tokens expire after 7 days and Quota Watch will fail to refresh. Add your own Google account under Audience > Test users, or set Publishing status to In production.",
+        shot4Caption: "In the Application type list, pick Desktop app.",
+        securityNote: "Your Client ID and Secret are encrypted with Windows DPAPI and stored only on this device. They are never sent anywhere except Google's token endpoint when refreshing.",
+        troubleshootTitle: "Troubleshooting",
+        tsColSymptom: "Symptom",
+        tsColCause: "Likely cause",
+        tsColFix: "Fix",
+        ts1Symptom: "Refresh fails after about 7 days",
+        ts1Cause: "Consent screen is still in Testing mode",
+        ts1Fix: "Add your account under Test users, or set Publishing status to In production.",
+        ts2Cause: "Client ID or Secret is wrong, or the Secret was rotated",
+        ts2Fix: "Re-copy both values from the same OAuth client and save again.",
+        ts3Cause: "Your Google account is not allowed for this client",
+        ts3Fix: "Add the account as a Test user, or sign in with the account that owns the project.",
+        linksAria: "Official setup links",
+        consoleLink: "Open Google Cloud Clients",
+        officialHelpLink: "Open Google official help",
+        lastChecked: "Last checked: 2026-06-06",
+        footerGuidance: "If the Google Cloud screen looks different, use the menu names or search terms in this guide."
+      },
+      ko: {
+        pageTitle: "Quota Watch - Antigravity OAuth 설정 안내",
+        languageLabel: "언어",
+        title: "Antigravity OAuth 설정 안내",
+        intro: "Quota Watch이 Google Cloud에서 Antigravity 사용량을 읽을 수 있도록 OAuth 클라이언트를 만드는 방법입니다.",
+        optionalNotice: "선택 사항입니다. Antigravity IDE를 실행해 두는 경우 이 설정을 하지 않아도 됩니다.",
+        overviewTitle: "전체 순서",
+        overviewAria: "OAuth 설정 순서",
+        flowProject: "프로젝트 선택 또는 생성",
+        flowAuth: "Google Auth 등록",
+        flowClient: "Create client",
+        flowDesktop: "Desktop app 선택",
+        flowCopy: "ID와 Secret 복사",
+        flowSave: "Quota Watch에 저장",
+        stepsTitle: "단계별 안내",
+        step1Title: "Google Cloud 프로젝트 선택 또는 생성",
+        step1Body: "Google Cloud Console에 로그인한 뒤 상단의 프로젝트 선택기를 엽니다. 기존 프로젝트를 선택하거나 새 프로젝트를 만드세요.",
+        step1Path: "검색어: 프로젝트 선택, New project",
+        step2Title: "필요한 경우 Google Auth 등록",
+        step2Body: "처음 OAuth를 사용하는 프로젝트라면 Google Auth Platform 안내에 따라 앱 이름과 사용자 지원 이메일을 등록합니다. 이미 등록했다면 건너뜁니다.",
+        step2Path: "메뉴 또는 검색어: Google Auth Platform, Branding, Audience",
+        step3Title: "OAuth 클라이언트 만들기",
+        step3Body: "Clients 화면에서 Create client를 선택합니다.",
+        step3Path: "경로: Google Auth Platform → Clients → Create client",
+        step4Title: "애플리케이션 유형 선택",
+        step4Body: "Application type에서 Desktop app을 선택하고 알아보기 쉬운 이름을 입력한 뒤 생성합니다.",
+        step4Path: "필수 선택: Application type: Desktop app",
+        step5Title: "Client ID와 Client Secret 복사",
+        step5Body: "생성 결과에 표시되는 Client ID와 Client Secret을 복사하여 안전한 곳에 보관합니다.",
+        secretWarning: "Client Secret 전체 값은 생성 시에만 보일 수 있습니다. 창을 닫기 전에 즉시 안전하게 보관하세요.",
+        step6Title: "Quota Watch에 붙여넣고 저장",
+        step6Body: "Quota Watch 설정의 Antigravity OAuth에 Client ID와 Client Secret을 붙여넣고 저장합니다. 새로고침하여 상태를 확인하세요.",
+        step6Path: "Quota Watch: 설정 → Antigravity OAuth → 저장",
+        publishWarn: "중요: OAuth 동의 화면이 '테스트(Testing)' 상태로 남아 있으면 refresh 토큰이 7일 후 만료되어 Quota Watch 갱신이 실패합니다. Audience > 테스트 사용자(Test users)에 본인 Google 계정을 추가하거나, 게시 상태(Publishing status)를 '프로덕션(In production)'으로 변경하세요.",
+        shot4Caption: "Application type 목록에서 Desktop app을 선택하세요.",
+        securityNote: "입력한 Client ID와 Secret은 Windows DPAPI로 암호화되어 이 기기에만 저장됩니다. 갱신 시 Google 토큰 엔드포인트로만 전송되며 그 외 어디에도 보내지 않습니다.",
+        troubleshootTitle: "문제 해결",
+        tsColSymptom: "증상",
+        tsColCause: "추정 원인",
+        tsColFix: "해결",
+        ts1Symptom: "약 7일 후 갱신 실패",
+        ts1Cause: "동의 화면이 아직 '테스트' 상태",
+        ts1Fix: "테스트 사용자에 본인 계정을 추가하거나 게시 상태를 '프로덕션'으로 변경하세요.",
+        ts2Cause: "Client ID/Secret이 틀렸거나 Secret이 재발급됨",
+        ts2Fix: "같은 OAuth 클라이언트에서 두 값을 다시 복사해 저장하세요.",
+        ts3Cause: "이 클라이언트에 해당 Google 계정이 허용되지 않음",
+        ts3Fix: "계정을 테스트 사용자로 추가하거나, 프로젝트 소유 계정으로 로그인하세요.",
+        linksAria: "공식 설정 링크",
+        consoleLink: "Google Cloud Clients 열기",
+        officialHelpLink: "Google 공식 도움말 열기",
+        lastChecked: "최종 확인: 2026-06-06",
+        footerGuidance: "Google Cloud 화면이 다르면 이 문서의 메뉴명 또는 검색어로 기능을 찾아보세요."
+      },
+      ja: {
+        pageTitle: "Quota Watch - Antigravity OAuth 設定ガイド",
+        languageLabel: "言語",
+        title: "Antigravity OAuth 設定ガイド",
+        intro: "Quota Watch が Google Cloud から Antigravity の使用量を読み取るための OAuth クライアントを作成します。",
+        optionalNotice: "この設定は任意です。Antigravity IDE を起動している場合は設定する必要はありません。",
+        overviewTitle: "設定の流れ",
+        overviewAria: "OAuth 設定の流れ",
+        flowProject: "プロジェクトを選択または作成",
+        flowAuth: "Google Auth を登録",
+        flowClient: "Create client",
+        flowDesktop: "Desktop app を選択",
+        flowCopy: "ID と Secret をコピー",
+        flowSave: "Quota Watch に保存",
+        stepsTitle: "手順",
+        step1Title: "Google Cloud プロジェクトを選択または作成",
+        step1Body: "Google Cloud Console にログインし、上部のプロジェクト選択メニューを開きます。既存のプロジェクトを選ぶか、新規作成します。",
+        step1Path: "検索語: Project selector, New project",
+        step2Title: "必要に応じて Google Auth を登録",
+        step2Body: "初めて OAuth を使うプロジェクトでは、Google Auth Platform の案内に従ってアプリ名とサポートメールを登録します。登録済みなら省略できます。",
+        step2Path: "メニューまたは検索語: Google Auth Platform, Branding, Audience",
+        step3Title: "OAuth クライアントを作成",
+        step3Body: "Clients 画面で Create client を選択します。",
+        step3Path: "パス: Google Auth Platform → Clients → Create client",
+        step4Title: "アプリケーションの種類を選択",
+        step4Body: "Application type で Desktop app を選び、分かりやすい名前を入力して作成します。",
+        step4Path: "必須項目: Application type: Desktop app",
+        step5Title: "Client ID と Client Secret をコピー",
+        step5Body: "作成後に表示される Client ID と Client Secret をコピーし、安全な場所に保管します。",
+        secretWarning: "Client Secret の完全な値は作成時にしか表示されない場合があります。画面を閉じる前に必ず安全に保管してください。",
+        step6Title: "Quota Watch に貼り付けて保存",
+        step6Body: "Quota Watch の設定で Antigravity OAuth を開き、Client ID と Client Secret を貼り付けて保存します。更新して状態を確認してください。",
+        step6Path: "Quota Watch: 設定 → Antigravity OAuth → 保存",
+        publishWarn: "重要: OAuth 同意画面が「テスト(Testing)」のままだと、リフレッシュトークンは 7 日で失効し、Quota Watch の更新が失敗します。Audience > テストユーザー(Test users)に自分の Google アカウントを追加するか、公開ステータス(Publishing status)を「本番(In production)」に変更してください。",
+        shot4Caption: "Application type の一覧で Desktop app を選びます。",
+        securityNote: "入力した Client ID と Secret は Windows DPAPI で暗号化され、この端末にのみ保存されます。更新時に Google のトークンエンドポイントへ送信されるだけで、他へは送信されません。",
+        troubleshootTitle: "トラブルシューティング",
+        tsColSymptom: "症状",
+        tsColCause: "考えられる原因",
+        tsColFix: "対処",
+        ts1Symptom: "約 7 日後に更新が失敗する",
+        ts1Cause: "同意画面がまだ「テスト」状態",
+        ts1Fix: "テストユーザーに自分のアカウントを追加するか、公開ステータスを「本番」に変更します。",
+        ts2Cause: "Client ID/Secret が誤っている、または Secret が再発行された",
+        ts2Fix: "同じ OAuth クライアントから両方の値を再コピーして保存します。",
+        ts3Cause: "このクライアントで対象の Google アカウントが許可されていない",
+        ts3Fix: "アカウントをテストユーザーに追加するか、プロジェクト所有アカウントでログインします。",
+        linksAria: "公式設定リンク",
+        consoleLink: "Google Cloud Clients を開く",
+        officialHelpLink: "Google 公式ヘルプを開く",
+        lastChecked: "最終確認: 2026-06-06",
+        footerGuidance: "Google Cloud の画面が異なる場合は、このガイドのメニュー名または検索語を使って探してください。"
+      },
+      zh: {
+        pageTitle: "Quota Watch - Antigravity OAuth 设置指南",
+        languageLabel: "语言",
+        title: "Antigravity OAuth 设置指南",
+        intro: "创建 OAuth 客户端，使 Quota Watch 可以从 Google Cloud 读取 Antigravity 使用量。",
+        optionalNotice: "此设置为可选项。如果 Antigravity IDE 保持运行，则无需进行此设置。",
+        overviewTitle: "设置流程",
+        overviewAria: "OAuth 设置流程",
+        flowProject: "选择或创建项目",
+        flowAuth: "注册 Google Auth",
+        flowClient: "Create client",
+        flowDesktop: "选择 Desktop app",
+        flowCopy: "复制 ID 和 Secret",
+        flowSave: "保存到 Quota Watch",
+        stepsTitle: "分步说明",
+        step1Title: "选择或创建 Google Cloud 项目",
+        step1Body: "登录 Google Cloud Console，打开顶部的项目选择器。选择现有项目或创建新项目。",
+        step1Path: "搜索词：Project selector、New project",
+        step2Title: "需要时注册 Google Auth",
+        step2Body: "首次使用 OAuth 的项目，请按照 Google Auth Platform 的说明注册应用名称和支持邮箱。已注册则可跳过。",
+        step2Path: "菜单或搜索词：Google Auth Platform、Branding、Audience",
+        step3Title: "创建 OAuth 客户端",
+        step3Body: "打开 Clients 页面并选择 Create client。",
+        step3Path: "路径：Google Auth Platform → Clients → Create client",
+        step4Title: "选择应用类型",
+        step4Body: "在 Application type 中选择 Desktop app，输入易于识别的名称并创建。",
+        step4Path: "必选项：Application type: Desktop app",
+        step5Title: "复制 Client ID 和 Client Secret",
+        step5Body: "复制创建后显示的 Client ID 和 Client Secret，并将其保存在安全的位置。",
+        secretWarning: "Client Secret 的完整值可能只在创建时显示。关闭窗口前请立即妥善保存。",
+        step6Title: "粘贴到 Quota Watch 并保存",
+        step6Body: "在 Quota Watch 设置中找到 Antigravity OAuth，粘贴 Client ID 和 Client Secret 后保存。刷新以检查状态。",
+        step6Path: "Quota Watch：设置 → Antigravity OAuth → 保存",
+        publishWarn: "重要：如果 OAuth 同意屏幕仍处于「测试(Testing)」状态，刷新令牌会在 7 天后过期，Quota Watch 将无法刷新。请在 Audience > 测试用户(Test users) 中添加你自己的 Google 账号，或将发布状态(Publishing status)设为「正式版(In production)」。",
+        shot4Caption: "在 Application type 列表中选择 Desktop app。",
+        securityNote: "你输入的 Client ID 和 Secret 通过 Windows DPAPI 加密，仅保存在本设备上。仅在刷新时发送到 Google 的令牌端点，不会发送到其他任何地方。",
+        troubleshootTitle: "故障排除",
+        tsColSymptom: "现象",
+        tsColCause: "可能原因",
+        tsColFix: "解决",
+        ts1Symptom: "约 7 天后刷新失败",
+        ts1Cause: "同意屏幕仍为「测试」状态",
+        ts1Fix: "将你的账号添加为测试用户，或将发布状态设为「正式版」。",
+        ts2Cause: "Client ID/Secret 有误，或 Secret 已轮换",
+        ts2Fix: "从同一个 OAuth 客户端重新复制两个值并再次保存。",
+        ts3Cause: "此客户端不允许该 Google 账号",
+        ts3Fix: "将该账号添加为测试用户，或使用拥有该项目的账号登录。",
+        linksAria: "官方设置链接",
+        consoleLink: "打开 Google Cloud Clients",
+        officialHelpLink: "打开 Google 官方帮助",
+        lastChecked: "最后确认：2026-06-06",
+        footerGuidance: "如果 Google Cloud 界面不同，请使用本指南中的菜单名称或搜索词查找相应功能。"
+      }
+    };
+
+    const supportedLanguages = ["en", "ko", "ja", "zh"];
+    const officialHelpUrls = {
+      en: "https://support.google.com/cloud/answer/6158849?hl=en",
+      ko: "https://support.google.com/cloud/answer/6158849?hl=ko",
+      ja: "https://support.google.com/cloud/answer/6158849?hl=ja",
+      zh: "https://support.google.com/cloud/answer/6158849?hl=zh-CN"
+    };
+    const languageSelector = document.getElementById("language-selector");
+    const officialHelpLink = document.getElementById("official-help-link");
+
+    function normalizeLanguage(value) {
+      const language = (value || "").toLowerCase().split("-")[0];
+      return supportedLanguages.includes(language) ? language : null;
+    }
+
+    function detectLanguage() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("lang")) {
+        return normalizeLanguage(params.get("lang")) || "en";
+      }
+
+      const browserLanguages = navigator.languages && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language];
+      for (const browserLanguage of browserLanguages) {
+        const language = normalizeLanguage(browserLanguage);
+        if (language) {
+          return language;
+        }
+      }
+
+      return "en";
+    }
+
+    function applyLanguage(language) {
+      const selectedLanguage = supportedLanguages.includes(language) ? language : "en";
+      const text = translations[selectedLanguage];
+
+      document.documentElement.lang = selectedLanguage;
+      document.title = text.pageTitle;
+      languageSelector.value = selectedLanguage;
+      officialHelpLink.href = officialHelpUrls[selectedLanguage];
+
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        element.textContent = text[element.dataset.i18n];
+      });
+      document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => {
+        element.setAttribute("aria-label", text[element.dataset.i18nAriaLabel]);
+      });
+    }
+
+    languageSelector.addEventListener("change", (event) => {
+      applyLanguage(event.target.value);
+    });
+
+    applyLanguage(detectLanguage());
+  </script>
+</body>
+</html>

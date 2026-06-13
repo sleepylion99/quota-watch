@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP "inno-setup.exe"
+          Invoke-WebRequest -Uri "https://www.jrsoftware.org/download.php/is.exe" -OutFile $installer
+          Start-Process -FilePath $installer -ArgumentList "/VERYSILENT", "/NORESTART", "/CURRENTUSER" -Wait
+          "$env:LOCALAPPDATA\Programs\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Build release artifacts
+        shell: powershell
+        run: |
+          $version = "${env:GITHUB_REF_NAME}".TrimStart("v")
+          powershell -ExecutionPolicy Bypass -File .\packaging\build-release.ps1 -Version $version
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${env:GITHUB_REF_NAME}"
+          $version = $tag.TrimStart("v")
+          $portable = ".\artifacts\release\Quota-Watch-$version-win-x64-portable.zip"
+          $installer = ".\artifacts\release\Quota-Watch-Setup-$version-win-x64.exe"
+          $webInstaller = ".\artifacts\release\Quota-Watch-WebSetup-$version-win-x64.exe"
+          $notesFile = ".\artifacts\release\release-notes.md"
+          $manualNotesFile = ".\.github\release-notes\$tag.md"
+
+          if (Test-Path $manualNotesFile) {
+            Copy-Item $manualNotesFile $notesFile
+          }
+          else {
+            $previousTag = git describe --tags --abbrev=0 "$tag^" 2>$null
+            if ($LASTEXITCODE -ne 0) {
+              $previousTag = ""
+            }
+
+            if ([string]::IsNullOrWhiteSpace($previousTag)) {
+              $changes = git log --pretty=format:"- %s (%h)" -n 20
+            }
+            else {
+              $changes = git log --pretty=format:"- %s (%h)" "$previousTag..HEAD"
+            }
+
+            $notes = @(
+              "Windows용 Quota Watch 릴리즈입니다."
+              ""
+              "## 변경 사항"
+            )
+
+            if ($changes.Count -gt 0) {
+              $notes += $changes
+            }
+            else {
+              $notes += "- 내부 빌드 및 배포 산출물을 갱신했습니다."
+            }
+
+            $notes += @(
+              ""
+              "## 다운로드"
+              "- 일반 사용자: Setup exe 다운로드"
+              "- 설치 없이 실행: portable zip 다운로드"
+            )
+
+            $notes | Set-Content -Path $notesFile -Encoding UTF8
+          }
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $tag --title "Quota Watch $tag" --notes-file $notesFile
+            gh release upload $tag $portable $installer $webInstaller --clobber
+          }
+          else {
+            gh release create $tag $portable $installer $webInstaller --title "Quota Watch $tag" --notes-file $notesFile
+          }

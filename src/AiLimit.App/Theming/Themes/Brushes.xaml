@@ -1,0 +1,72 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Surface -->
+    <SolidColorBrush x:Key="Brush.Surface.Window"       Color="{DynamicResource Color.Surface.Window}" />
+    <SolidColorBrush x:Key="Brush.Surface.TitleBar"     Color="{DynamicResource Color.Surface.TitleBar}" />
+    <SolidColorBrush x:Key="Brush.Surface.Card"         Color="{DynamicResource Color.Surface.Card}" />
+    <SolidColorBrush x:Key="Brush.Surface.CardElevated" Color="{DynamicResource Color.Surface.CardElevated}" />
+    <SolidColorBrush x:Key="Brush.Surface.CardInverse"  Color="{DynamicResource Color.Surface.CardInverse}" />
+    <SolidColorBrush x:Key="Brush.Surface.Overlay"      Color="{DynamicResource Color.Surface.Overlay}" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="Brush.Text.Primary"   Color="{DynamicResource Color.Text.Primary}" />
+    <SolidColorBrush x:Key="Brush.Text.Secondary" Color="{DynamicResource Color.Text.Secondary}" />
+    <SolidColorBrush x:Key="Brush.Text.Tertiary"  Color="{DynamicResource Color.Text.Tertiary}" />
+    <SolidColorBrush x:Key="Brush.Text.OnAccent"  Color="{DynamicResource Color.Text.OnAccent}" />
+    <SolidColorBrush x:Key="Brush.Text.Muted"     Color="{DynamicResource Color.Text.Muted}" />
+
+    <!-- Border -->
+    <SolidColorBrush x:Key="Brush.Border.Default"     Color="{DynamicResource Color.Border.Default}" />
+    <SolidColorBrush x:Key="Brush.Border.Subtle"      Color="{DynamicResource Color.Border.Subtle}" />
+    <SolidColorBrush x:Key="Brush.Border.Strong"      Color="{DynamicResource Color.Border.Strong}" />
+    <SolidColorBrush x:Key="Brush.Border.WidgetCard"  Color="{DynamicResource Color.Border.WidgetCard}" />
+
+    <!-- Accent -->
+    <SolidColorBrush x:Key="Brush.Accent.Primary"        Color="{DynamicResource Color.Accent.Primary}" />
+    <SolidColorBrush x:Key="Brush.Accent.PrimaryHover"   Color="{DynamicResource Color.Accent.PrimaryHover}" />
+    <SolidColorBrush x:Key="Brush.Accent.PrimaryPressed" Color="{DynamicResource Color.Accent.PrimaryPressed}" />
+    <SolidColorBrush x:Key="Brush.Accent.Link"           Color="{DynamicResource Color.Accent.Link}" />
+
+    <!-- Status -->
+    <SolidColorBrush x:Key="Brush.Status.Fresh"       Color="{DynamicResource Color.Status.Fresh}" />
+    <SolidColorBrush x:Key="Brush.Status.FreshSoft"   Color="{DynamicResource Color.Status.FreshSoft}" />
+    <SolidColorBrush x:Key="Brush.Status.Warning"     Color="{DynamicResource Color.Status.Warning}" />
+    <SolidColorBrush x:Key="Brush.Status.Refreshing"  Color="{DynamicResource Color.Status.Refreshing}" />
+    <SolidColorBrush x:Key="Brush.Status.Stale"       Color="{DynamicResource Color.Status.Stale}" />
+    <SolidColorBrush x:Key="Brush.Status.Failed"      Color="{DynamicResource Color.Status.Failed}" />
+    <SolidColorBrush x:Key="Brush.Status.FailedSoft"  Color="{DynamicResource Color.Status.FailedSoft}" />
+    <SolidColorBrush x:Key="Brush.Status.FailedFaint" Color="{DynamicResource Color.Status.FailedFaint}" />
+    <SolidColorBrush x:Key="Brush.Status.Neutral"     Color="{DynamicResource Color.Status.Neutral}" />
+
+    <!-- Urgency -->
+    <SolidColorBrush x:Key="Brush.Urgency.Critical" Color="{DynamicResource Color.Urgency.Critical}" />
+    <SolidColorBrush x:Key="Brush.Urgency.High"     Color="{DynamicResource Color.Urgency.High}" />
+    <SolidColorBrush x:Key="Brush.Urgency.Medium"   Color="{DynamicResource Color.Urgency.Medium}" />
+    <SolidColorBrush x:Key="Brush.Urgency.Low"      Color="{DynamicResource Color.Urgency.Low}" />
+
+    <!-- Brand -->
+    <SolidColorBrush x:Key="Brush.Brand.Claude"       Color="{DynamicResource Color.Brand.Claude}" />
+    <SolidColorBrush x:Key="Brush.Brand.Codex"        Color="{DynamicResource Color.Brand.Codex}" />
+    <SolidColorBrush x:Key="Brush.Brand.Antigravity"  Color="{DynamicResource Color.Brand.Antigravity}" />
+    <SolidColorBrush x:Key="Brush.Brand.Unknown"      Color="{DynamicResource Color.Brand.Unknown}" />
+
+    <!-- Badge -->
+    <SolidColorBrush x:Key="Brush.Badge.Cloud.Fg"      Color="{DynamicResource Color.Badge.Cloud.Fg}" />
+    <SolidColorBrush x:Key="Brush.Badge.Cloud.Bg"      Color="{DynamicResource Color.Badge.Cloud.Bg}" />
+    <SolidColorBrush x:Key="Brush.Badge.Cloud.Border"  Color="{DynamicResource Color.Badge.Cloud.Border}" />
+    <SolidColorBrush x:Key="Brush.Badge.Ide.Fg"        Color="{DynamicResource Color.Badge.Ide.Fg}" />
+    <SolidColorBrush x:Key="Brush.Badge.Ide.Bg"        Color="{DynamicResource Color.Badge.Ide.Bg}" />
+    <SolidColorBrush x:Key="Brush.Badge.Ide.Border"    Color="{DynamicResource Color.Badge.Ide.Border}" />
+    <SolidColorBrush x:Key="Brush.Badge.FailureFg"     Color="{DynamicResource Color.Badge.FailureFg}" />
+    <SolidColorBrush x:Key="Brush.Badge.FailureBg"     Color="{DynamicResource Color.Badge.FailureBg}" />
+    <SolidColorBrush x:Key="Brush.Badge.FailureBorder" Color="{DynamicResource Color.Badge.FailureBorder}" />
+    <SolidColorBrush x:Key="Brush.Badge.OkFg"          Color="{DynamicResource Color.Badge.OkFg}" />
+    <SolidColorBrush x:Key="Brush.Badge.OkBg"          Color="{DynamicResource Color.Badge.OkBg}" />
+    <SolidColorBrush x:Key="Brush.Badge.OkBorder"      Color="{DynamicResource Color.Badge.OkBorder}" />
+
+    <!-- Indicator -->
+    <SolidColorBrush x:Key="Brush.Indicator.Clean" Color="{DynamicResource Color.Indicator.Clean}" />
+    <SolidColorBrush x:Key="Brush.Indicator.Dirty" Color="{DynamicResource Color.Indicator.Dirty}" />
+
+</ResourceDictionary>
