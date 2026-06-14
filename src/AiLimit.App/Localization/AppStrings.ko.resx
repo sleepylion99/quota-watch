@@ -64,6 +64,7 @@
   <data name="RefreshButtonText" xml:space="preserve"><value>새로고침</value></data>
   <data name="RefreshAllButtonText" xml:space="preserve"><value>전체 새로고침</value></data>
   <data name="HideButtonText" xml:space="preserve"><value>숨김</value></data>
+  <data name="PinWindowTooltip" xml:space="preserve"><value>항상 위에 고정</value></data>
   <data name="TrackProviderLabel" xml:space="preserve"><value>추적</value></data>
   <data name="SettingsPanelDetailText" xml:space="preserve"><value>대시보드 동작과 지원 기능을 한곳에서 조정합니다.</value></data>
   <data name="SettingsApplyButtonText" xml:space="preserve"><value>적용</value></data>

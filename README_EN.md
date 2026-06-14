@@ -16,7 +16,7 @@
 **Quota Watch** is a Windows desktop app that shows the usage limits and quota status of Codex, Claude Code, and Google Antigravity on a single screen. Through the tray icon and dashboard you can quickly check your current usage, reset times, and per-provider login status.
 
 > [!IMPORTANT]
-> The current release channel is `v0.0.1 Public Beta`. The app relies on each provider's local login data and on unofficial/internal quota APIs, so lookups may temporarily fail when a provider changes its API. Auth tokens are read locally only and are never sent to a Quota Watch server.
+> The current release channel is `v0.0.2 Public Beta`. The app relies on each provider's local login data and on unofficial/internal quota APIs, so lookups may temporarily fail when a provider changes its API. Auth tokens are read locally only and are never sent to a Quota Watch server.
 
 ## System requirements
 

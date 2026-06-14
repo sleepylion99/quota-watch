@@ -64,6 +64,7 @@
   <data name="RefreshButtonText" xml:space="preserve"><value>Refresh</value></data>
   <data name="RefreshAllButtonText" xml:space="preserve"><value>Refresh All</value></data>
   <data name="HideButtonText" xml:space="preserve"><value>Hide</value></data>
+  <data name="PinWindowTooltip" xml:space="preserve"><value>Keep window on top</value></data>
   <data name="TrackProviderLabel" xml:space="preserve"><value>Track</value></data>
   <data name="SettingsPanelDetailText" xml:space="preserve"><value>Adjust dashboard behavior and support actions in one place.</value></data>
   <data name="SettingsApplyButtonText" xml:space="preserve"><value>Apply</value></data>

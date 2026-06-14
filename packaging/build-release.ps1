@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.0.1",
+    [string]$Version = "0.0.2",
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [ValidateSet("offline", "online", "both")]

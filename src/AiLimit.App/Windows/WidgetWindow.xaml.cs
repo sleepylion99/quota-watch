@@ -20,6 +20,7 @@ public partial class WidgetWindow : Window
         DataContext = _viewModel;
         UpdateViewModel();
         ApplyWindowOpacity();
+        ApplyAlwaysOnTop();
 
         _state.SnapshotChanged += OnSnapshotChanged;
         _state.SettingsChanged += OnSettingsChanged;
@@ -78,7 +79,22 @@ public partial class WidgetWindow : Window
         {
             UpdateViewModel();
             ApplyWindowOpacity();
+            ApplyAlwaysOnTop();
         });
+    }
+
+    private void ApplyAlwaysOnTop()
+    {
+        var isAlwaysOnTop = _state.CurrentSettings.IsWidgetAlwaysOnTop;
+        Topmost = isAlwaysOnTop;
+        WidgetPinButton.IsChecked = isAlwaysOnTop;
+    }
+
+    private void WidgetPinButton_Click(object sender, RoutedEventArgs e)
+    {
+        var isAlwaysOnTop = WidgetPinButton.IsChecked == true;
+        Topmost = isAlwaysOnTop;
+        _state.SetWidgetAlwaysOnTop(isAlwaysOnTop);
     }
 
     private void ApplyWindowOpacity()

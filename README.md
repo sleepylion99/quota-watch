@@ -16,7 +16,7 @@
 **Quota Watch**는 Codex, Claude Code, Google Antigravity의 사용 한도와 quota 상태를 한 화면에서 확인하는 Windows 데스크톱 앱입니다. 트레이 아이콘과 대시보드를 통해 현재 사용량, reset 시점, provider별 로그인 상태를 빠르게 확인할 수 있습니다.
 
 > [!IMPORTANT]
-> 현재 릴리즈 채널은 `v0.0.1 Public Beta`입니다. 이 앱은 각 provider의 로컬 로그인 정보와 비공식/내부 quota API를 사용하므로 provider 변경에 따라 일시적으로 조회가 실패할 수 있습니다. 인증 토큰은 로컬에서만 읽고, Quota Watch 서버로 전송하지 않습니다.
+> 현재 릴리즈 채널은 `v0.0.2 Public Beta`입니다. 이 앱은 각 provider의 로컬 로그인 정보와 비공식/내부 quota API를 사용하므로 provider 변경에 따라 일시적으로 조회가 실패할 수 있습니다. 인증 토큰은 로컬에서만 읽고, Quota Watch 서버로 전송하지 않습니다.
 
 ## 시스템 요구사항
 

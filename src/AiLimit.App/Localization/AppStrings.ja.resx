@@ -64,6 +64,7 @@
   <data name="RefreshButtonText" xml:space="preserve"><value>更新</value></data>
   <data name="RefreshAllButtonText" xml:space="preserve"><value>すべて更新</value></data>
   <data name="HideButtonText" xml:space="preserve"><value>非表示</value></data>
+  <data name="PinWindowTooltip" xml:space="preserve"><value>常に最前面に固定</value></data>
   <data name="TrackProviderLabel" xml:space="preserve"><value>追跡</value></data>
   <data name="SettingsPanelDetailText" xml:space="preserve"><value>ダッシュボードの動作とサポート機能を一か所で調整します。</value></data>
   <data name="SettingsApplyButtonText" xml:space="preserve"><value>適用</value></data>

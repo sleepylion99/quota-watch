@@ -74,6 +74,12 @@
                                FontSize="11"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource Brush.Accent.Link}" />
+                    <ToggleButton x:Name="DashboardPinButton"
+                                  Style="{StaticResource WindowPinToggleButtonStyle}"
+                                  Margin="0,0,4,0"
+                                  Content="&#xE718;"
+                                  ToolTip="{Binding PinWindowTooltipText}"
+                                  Click="DashboardPinButton_Click" />
                     <Button Style="{StaticResource WindowMinimizeButtonStyle}"
                             Margin="0,0,4,0"
                             Content="&#x2212;"

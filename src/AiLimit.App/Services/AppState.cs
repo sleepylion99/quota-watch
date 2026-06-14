@@ -163,6 +163,7 @@ public sealed class AppState
             _dashboardWindow.Closed += (_, _) => _dashboardWindow = null;
         }
 
+        _dashboardWindow.Topmost = CurrentSettings.IsDashboardAlwaysOnTop;
         _dashboardWindow.Show();
         _dashboardWindow.Activate();
     }
@@ -258,6 +259,30 @@ public sealed class AppState
         }
 
         QueueSettingsUpdate("Save widget opacity", settings => settings with { WidgetOpacity = clamped });
+    }
+
+    public void SetWidgetAlwaysOnTop(bool isAlwaysOnTop)
+    {
+        if (CurrentSettings.IsWidgetAlwaysOnTop == isAlwaysOnTop)
+        {
+            return;
+        }
+
+        QueueSettingsUpdate(
+            "Save widget always-on-top setting",
+            settings => settings with { IsWidgetAlwaysOnTop = isAlwaysOnTop });
+    }
+
+    public void SetDashboardAlwaysOnTop(bool isAlwaysOnTop)
+    {
+        if (CurrentSettings.IsDashboardAlwaysOnTop == isAlwaysOnTop)
+        {
+            return;
+        }
+
+        QueueSettingsUpdate(
+            "Save dashboard always-on-top setting",
+            settings => settings with { IsDashboardAlwaysOnTop = isAlwaysOnTop });
     }
 
     public void PreviewLanguage(AppLanguage language)

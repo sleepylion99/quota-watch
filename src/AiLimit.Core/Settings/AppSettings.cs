@@ -107,7 +107,8 @@ public sealed record AppSettings(
     IReadOnlyList<ProviderLimitWarningSetting>? LimitWarningSettings = null,
     AppThemeMode ThemeMode = AppThemeMode.Dark,
     double DashboardOpacity = 1.0,
-    double WidgetOpacity = 1.0)
+    double WidgetOpacity = 1.0,
+    bool IsDashboardAlwaysOnTop = false)
 {
     public const double MinimumWindowOpacity = 0.2;
     public const double MaximumWindowOpacity = 1.0;
@@ -134,7 +135,8 @@ public sealed record AppSettings(
         ],
         ThemeMode: AppThemeMode.System,
         DashboardOpacity: 1.0,
-        WidgetOpacity: 1.0);
+        WidgetOpacity: 1.0,
+        IsDashboardAlwaysOnTop: false);
 
     public IReadOnlyList<ProviderSetting> GetEffectiveProviders()
     {

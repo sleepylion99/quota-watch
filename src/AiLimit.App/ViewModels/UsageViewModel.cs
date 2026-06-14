@@ -47,6 +47,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     public string RefreshAllButtonText { get; private set; } = "Refresh All";
     public string CopyDiagnosticLogButtonText { get; private set; } = "Copy Log";
     public string HideButtonText { get; private set; } = "Hide";
+    public string PinWindowTooltipText { get; private set; } = "Keep window on top";
     public string ModelSettingsButtonText { get; private set; } = "Model Settings";
     public string ModelSettingsDetailText { get; private set; } = "Choose which providers appear on the dashboard.";
     public string AntigravityOAuthTitleText { get; private set; } = "Antigravity OAuth";
@@ -321,6 +322,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         RefreshAllButtonText = AppText.Get(language, AppStringKeys.RefreshAllButtonText);
         CopyDiagnosticLogButtonText = AppText.Get(language, AppStringKeys.CopyDiagnosticLogButtonText);
         HideButtonText = AppText.Get(language, AppStringKeys.HideButtonText);
+        PinWindowTooltipText = AppText.Get(language, AppStringKeys.PinWindowTooltip);
         ModelSettingsButtonText = AppText.Get(language, AppStringKeys.ModelSettingsButtonText);
         ModelSettingsDetailText = AppText.Get(language, AppStringKeys.ModelSettingsDetailText);
         LanguageSettingsTitleText = AppText.Get(language, AppStringKeys.LanguageSettingsTitleText);
@@ -580,6 +582,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(RefreshAllButtonText));
         OnPropertyChanged(nameof(CopyDiagnosticLogButtonText));
         OnPropertyChanged(nameof(HideButtonText));
+        OnPropertyChanged(nameof(PinWindowTooltipText));
         OnPropertyChanged(nameof(ModelSettingsButtonText));
         OnPropertyChanged(nameof(ModelSettingsDetailText));
         OnPropertyChanged(nameof(AntigravityOAuthTitleText));

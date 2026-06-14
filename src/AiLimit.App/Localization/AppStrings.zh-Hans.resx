@@ -64,6 +64,7 @@
   <data name="RefreshButtonText" xml:space="preserve"><value>刷新</value></data>
   <data name="RefreshAllButtonText" xml:space="preserve"><value>全部刷新</value></data>
   <data name="HideButtonText" xml:space="preserve"><value>隐藏</value></data>
+  <data name="PinWindowTooltip" xml:space="preserve"><value>窗口置顶</value></data>
   <data name="TrackProviderLabel" xml:space="preserve"><value>跟踪</value></data>
   <data name="SettingsPanelDetailText" xml:space="preserve"><value>在一处调整仪表盘行为和支持功能。</value></data>
   <data name="SettingsApplyButtonText" xml:space="preserve"><value>应用</value></data>

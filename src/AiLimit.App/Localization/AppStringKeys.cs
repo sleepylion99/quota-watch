@@ -75,6 +75,7 @@ internal static class AppStringKeys
     public const string RefreshButtonText = nameof(RefreshButtonText);
     public const string RefreshAllButtonText = nameof(RefreshAllButtonText);
     public const string HideButtonText = nameof(HideButtonText);
+    public const string PinWindowTooltip = nameof(PinWindowTooltip);
     public const string TrackProviderLabel = nameof(TrackProviderLabel);
 
     // Settings panel

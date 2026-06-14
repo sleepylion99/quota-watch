@@ -23,6 +23,7 @@ public partial class DashboardWindow : Window
         UpdateViewModel();
         UpdateThemeToggle(_state.CurrentSettings.ThemeMode, animate: false);
         ApplyWindowOpacity();
+        ApplyAlwaysOnTop();
 
         _state.SnapshotChanged += OnSnapshotChanged;
         _state.SettingsChanged += OnSettingsChanged;
@@ -140,7 +141,22 @@ public partial class DashboardWindow : Window
             UpdateViewModel();
             UpdateThemeToggle(_state.CurrentSettings.ThemeMode, animate: true);
             ApplyWindowOpacity();
+            ApplyAlwaysOnTop();
         });
+    }
+
+    private void ApplyAlwaysOnTop()
+    {
+        var isAlwaysOnTop = _state.CurrentSettings.IsDashboardAlwaysOnTop;
+        Topmost = isAlwaysOnTop;
+        DashboardPinButton.IsChecked = isAlwaysOnTop;
+    }
+
+    private void DashboardPinButton_Click(object sender, RoutedEventArgs e)
+    {
+        var isAlwaysOnTop = DashboardPinButton.IsChecked == true;
+        Topmost = isAlwaysOnTop;
+        _state.SetDashboardAlwaysOnTop(isAlwaysOnTop);
     }
 
     private void ApplyWindowOpacity()
