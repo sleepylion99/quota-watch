@@ -18,6 +18,7 @@ public partial class SettingsWindow : Window
     private AppLanguage _originalLanguage;
     private bool _originalLimitWarningEnabled;
     private List<ProviderLimitWarningSetting> _originalLimitWarningSettings = [];
+    private CodexProfilesWindow? _codexProfilesWindow;
     private bool _hasPendingSettingsChanges;
     private bool HasPendingSettingsChanges
     {
@@ -102,6 +103,22 @@ public partial class SettingsWindow : Window
             RecomputePendingSettingsChanges();
             UpdatePendingSettingsPreview();
         }
+    }
+
+    private void ManageCodexProfilesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_codexProfilesWindow is { IsVisible: true })
+        {
+            _codexProfilesWindow.Activate();
+            return;
+        }
+
+        _codexProfilesWindow = new CodexProfilesWindow(_state)
+        {
+            Owner = this
+        };
+        _codexProfilesWindow.Closed += (_, _) => _codexProfilesWindow = null;
+        _codexProfilesWindow.Show();
     }
 
     private void LanguageOptionButton_Click(object sender, RoutedEventArgs e)
@@ -429,7 +446,9 @@ public partial class SettingsWindow : Window
                 _pendingLimitWarningSettings,
                 _state.CurrentSettings.ThemeMode,
                 _state.CurrentSettings.DashboardOpacity,
-                _state.CurrentSettings.WidgetOpacity);
+                _state.CurrentSettings.WidgetOpacity,
+                codexProfiles: _state.CurrentSettings.GetEffectiveCodexProfiles(),
+                selectedCodexProfileId: _state.CurrentSettings.SelectedCodexProfileId);
 
             // Issue 2: re-localize OAuth status with pending language
             _viewModel.SetAntigravityOAuthStatus(AntigravityOAuthStatus(_currentOAuthStatusKind));
@@ -513,6 +532,8 @@ public partial class SettingsWindow : Window
             _pendingLimitWarningSettings,
             _state.CurrentSettings.ThemeMode,
             _state.CurrentSettings.DashboardOpacity,
-            _state.CurrentSettings.WidgetOpacity);
+            _state.CurrentSettings.WidgetOpacity,
+            codexProfiles: _state.CurrentSettings.GetEffectiveCodexProfiles(),
+            selectedCodexProfileId: _state.CurrentSettings.SelectedCodexProfileId);
     }
 }

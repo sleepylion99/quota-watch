@@ -96,6 +96,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <CheckBox Grid.Column="0"
                                               Margin="0,2,10,0"
@@ -127,6 +128,25 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </StackPanel>
+                                    <Button Grid.Column="2"
+                                            MinWidth="74"
+                                            Height="28"
+                                            Margin="8,0,0,0"
+                                            Padding="10,0"
+                                            Content="{Binding DataContext.CodexProfilesTitleText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Click="ManageCodexProfilesButton_Click">
+                                        <Button.Style>
+                                            <Style TargetType="Button"
+                                                   BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SupportsProfiles}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

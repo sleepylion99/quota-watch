@@ -113,21 +113,31 @@
                                     BorderThickness="1"
                                     CornerRadius="15">
                                 <StackPanel>
-                                    <Grid>
+                                    <TextBlock Text="{Binding ProviderName}"
+                                               Foreground="{DynamicResource Brush.Text.Primary}"
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <Grid x:Name="WidgetPrimarySummary"
+                                          Margin="0,2,0,0">
+                                        <Grid.Style>
+                                            <Style TargetType="Grid">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ShowPrimarySummary}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Grid.Style>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Margin="0,0,12,0">
-                                            <TextBlock Text="{Binding ProviderName}"
-                                                       Foreground="{DynamicResource Brush.Text.Primary}"
-                                                       FontSize="14"
-                                                       FontWeight="Bold"
-                                                       TextTrimming="CharacterEllipsis" />
                                             <TextBlock Text="{Binding PrimaryLabel}"
                                                        Foreground="{DynamicResource Brush.Text.Muted}"
                                                        FontSize="11"
-                                                       Margin="0,2,0,0"
                                                        TextTrimming="CharacterEllipsis" />
                                             <TextBlock Text="{Binding ResetText}"
                                                        Foreground="{DynamicResource Brush.Text.Tertiary}"
@@ -143,6 +153,23 @@
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Right" />
                                     </Grid>
+                                    <TextBlock Text="{Binding PredictionText}"
+                                               Margin="0,6,0,0"
+                                               Foreground="{DynamicResource Brush.Text.Secondary}"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ShowPrediction}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                     <ItemsControl ItemsSource="{Binding VisibleWindows}"
                                                   Margin="0,8,0,0">
                                         <ItemsControl.ItemTemplate>
@@ -185,6 +212,22 @@
                                                             </Style>
                                                         </ProgressBar.Style>
                                                     </ProgressBar>
+                                                    <TextBlock Text="{Binding PredictionText}"
+                                                               Margin="0,4,0,0"
+                                                               Foreground="{DynamicResource Brush.Text.Tertiary}"
+                                                               FontSize="9"
+                                                               TextWrapping="Wrap">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding ShowPrediction}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>

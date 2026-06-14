@@ -202,4 +202,10 @@
   <data name="LimitWarningDismiss" xml:space="preserve"><value>关闭</value></data>
   <data name="LimitWarningBodyUsedPercent" xml:space="preserve"><value>{0} {1}: 已用 {2}%。</value></data>
   <data name="LimitWarningBodyRemaining" xml:space="preserve"><value>{0} {1}: 剩余 {2}%。</value></data>
+  <data name="PredictionDepleteIn" xml:space="preserve"><value>预计约 {0} 后用尽</value></data>
+  <data name="PredictionCollecting" xml:space="preserve"><value>正在收集预测数据 ({0}/{1})</value></data>
+  <data name="PredictionWaitingForChange" xml:space="preserve"><value>正在等待用量变化以进行预测</value></data>
+  <data name="PredictionDepleted" xml:space="preserve"><value>额度已用尽</value></data>
+  <data name="PredictionNoDepletion" xml:space="preserve"><value>按当前趋势，本周期内不会达到上限</value></data>
+  <data name="PredictionDepletionAt" xml:space="preserve"><value>预计在 {0:t} 左右用尽</value></data>
 </root>

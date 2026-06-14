@@ -111,4 +111,63 @@ public sealed class ProviderSettingsTests
         Assert.Equal("Google Antigravity", antigravity.DisplayName);
         Assert.Null(antigravity.Mode);
     }
+
+    [Fact]
+    public void EffectiveCodexProfilesAlwaysIncludeDefaultProfile()
+    {
+        var settings = AppSettings.Default with
+        {
+            CodexProfiles = [],
+            SelectedCodexProfileId = null
+        };
+
+        var profiles = settings.GetEffectiveCodexProfiles();
+
+        var profile = Assert.Single(profiles);
+        Assert.Equal(CodexProfileSetting.DefaultId, profile.Id);
+        Assert.Equal(CodexProfilePaths.DefaultAuthPath(), profile.AuthPath);
+        Assert.True(profile.IsDefault);
+    }
+
+    [Fact]
+    public void EffectiveCodexProfilesRemoveDuplicatePathsAndNormalizeNames()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "codex-profile");
+        var authPath = Path.Combine(directory, "auth.json");
+        var settings = AppSettings.Default with
+        {
+            CodexProfiles =
+            [
+                new CodexProfileSetting("work", "  Work  ", authPath),
+                new CodexProfileSetting("duplicate", "Duplicate", authPath.ToUpperInvariant())
+            ],
+            SelectedCodexProfileId = "work"
+        };
+
+        var profiles = settings.GetEffectiveCodexProfiles();
+
+        Assert.Equal(2, profiles.Count);
+        var custom = Assert.Single(profiles, profile => !profile.IsDefault);
+        Assert.Equal("work", custom.Id);
+        Assert.Equal("Work", custom.DisplayName);
+        Assert.Equal(Path.GetFullPath(authPath), custom.AuthPath);
+    }
+
+    [Fact]
+    public void NormalizeFallsBackToDefaultWhenSelectedCodexProfileIsMissing()
+    {
+        var settings = AppSettings.Default with
+        {
+            CodexProfiles =
+            [
+                new CodexProfileSetting("work", "Work", Path.Combine(Path.GetTempPath(), "work", "auth.json"))
+            ],
+            SelectedCodexProfileId = "removed"
+        };
+
+        var normalized = settings.Normalize();
+
+        Assert.Equal(CodexProfileSetting.DefaultId, normalized.SelectedCodexProfileId);
+        Assert.Equal(CodexProfileSetting.DefaultId, normalized.GetSelectedCodexProfile().Id);
+    }
 }

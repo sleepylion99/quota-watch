@@ -1,0 +1,210 @@
+<Window x:Class="AiLimit.App.Windows.CodexProfilesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding CodexProfilesTitleText}"
+        Icon="/Assets/Icons/app.ico"
+        Width="620"
+        Height="560"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <Border Margin="8"
+            Background="{DynamicResource Brush.Surface.Window}"
+            BorderBrush="{DynamicResource Brush.Border.Default}"
+            BorderThickness="1"
+            CornerRadius="12">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Padding="18,0,10,0"
+                    Background="{DynamicResource Brush.Surface.TitleBar}"
+                    CornerRadius="11,11,0,0"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Quota Watch"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource Brush.Text.Primary}"
+                               FontSize="15"
+                               FontWeight="Bold" />
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Button Style="{StaticResource WindowMinimizeButtonStyle}"
+                                Margin="0,0,4,0"
+                                Content="&#x2212;"
+                                Click="ProfilesMinimizeButton_Click" />
+                        <Button Style="{StaticResource WindowCloseButtonStyle}"
+                                Content="&#x00D7;"
+                                Click="CloseButton_Click" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="20,18,20,20">
+                    <TextBlock Text="{Binding CodexProfilesTitleText}"
+                               Foreground="{DynamicResource Brush.Text.Primary}"
+                               FontSize="20"
+                               FontWeight="Bold" />
+                    <TextBlock Text="{Binding CodexProfilesDetailText}"
+                               Margin="0,4,0,16"
+                               Foreground="{DynamicResource Brush.Text.Secondary}"
+                               FontSize="11"
+                               TextWrapping="Wrap" />
+
+                    <ItemsControl ItemsSource="{Binding CodexProfileSettings}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,12"
+                                        Padding="16"
+                                        Background="{DynamicResource Brush.Surface.Card}"
+                                        BorderBrush="{DynamicResource Brush.Border.Default}"
+                                        BorderThickness="1"
+                                        CornerRadius="12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding DisplayName}"
+                                                           Foreground="{DynamicResource Brush.Text.Primary}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="13" />
+                                                <TextBlock Text="{Binding BadgeText}"
+                                                           Margin="8,1,0,0"
+                                                           Foreground="{DynamicResource Brush.Accent.Link}"
+                                                           FontSize="11" />
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding AuthPath}"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                       FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding AuthPath}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                MinWidth="74"
+                                                Height="28"
+                                                Margin="10,0,0,0"
+                                                Padding="10,0"
+                                                Tag="{Binding Id}"
+                                                Content="{Binding DataContext.CodexProfileRemoveButtonText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                Click="RemoveCodexProfileButton_Click">
+                                            <Button.Style>
+                                                <Style TargetType="Button"
+                                                       BasedOn="{StaticResource {x:Type Button}}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsRemovable}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Border Padding="16"
+                            Background="{DynamicResource Brush.Surface.Card}"
+                            BorderBrush="{DynamicResource Brush.Border.Default}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                        <StackPanel>
+                            <TextBlock Text="{Binding CodexProfileAddButtonText}"
+                                       Foreground="{DynamicResource Brush.Text.Primary}"
+                                       FontWeight="SemiBold"
+                                       FontSize="13" />
+                            <TextBlock Text="{Binding CodexProfileNameLabelText}"
+                                       Margin="0,12,0,4"
+                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                       FontSize="11" />
+                            <TextBox x:Name="CodexProfileNameBox"
+                                     Height="30"
+                                     Padding="8,4"
+                                     Background="{DynamicResource Brush.Surface.Window}"
+                                     BorderBrush="{DynamicResource Brush.Border.Default}"
+                                     Foreground="{DynamicResource Brush.Text.Primary}" />
+                            <TextBlock Text="{Binding CodexProfilePathLabelText}"
+                                       Margin="0,10,0,4"
+                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                       FontSize="11" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="CodexProfilePathBox"
+                                         Height="30"
+                                         Padding="8,4"
+                                         Background="{DynamicResource Brush.Surface.Window}"
+                                         BorderBrush="{DynamicResource Brush.Border.Default}"
+                                         Foreground="{DynamicResource Brush.Text.Primary}" />
+                                <Button Grid.Column="1"
+                                        MinWidth="74"
+                                        Height="30"
+                                        Margin="8,0,0,0"
+                                        Padding="10,0"
+                                        Content="{Binding CodexProfileBrowseButtonText}"
+                                        Click="BrowseCodexProfileButton_Click" />
+                            </Grid>
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button MinWidth="94"
+                                        Height="32"
+                                        Padding="12,0"
+                                        Background="{DynamicResource Brush.Accent.Primary}"
+                                        BorderBrush="{DynamicResource Brush.Accent.PrimaryHover}"
+                                        Content="{Binding CodexProfileAddButtonText}"
+                                        Click="AddCodexProfileButton_Click" />
+                                <TextBlock x:Name="CodexProfileStatusText"
+                                           Grid.Column="1"
+                                           Margin="12,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush.Text.Secondary}"
+                                           FontSize="11"
+                                           TextWrapping="Wrap" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border x:Name="ProfilesActionFooter"
+                    Grid.Row="2"
+                    Padding="20,14"
+                    Background="{DynamicResource Brush.Surface.TitleBar}"
+                    BorderBrush="{DynamicResource Brush.Surface.CardElevated}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,11,11">
+                <Button MinWidth="84"
+                        Height="34"
+                        Padding="12,0"
+                        HorizontalAlignment="Right"
+                        Content="{Binding SettingsCloseButtonText}"
+                        Click="CloseButton_Click" />
+            </Border>
+        </Grid>
+    </Border>
+</Window>

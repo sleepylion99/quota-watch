@@ -20,6 +20,7 @@ public sealed class AppState
     private DashboardWindow? _dashboardWindow;
     private WidgetWindow? _widgetWindow;
     private IReadOnlyList<UsageSnapshot> _latestSnapshots = [];
+    private IReadOnlyList<UsageSample> _usageHistory = [];
     private AppLanguage? _previewLanguage;
 
     public ThemeService? ThemeService { get; set; }
@@ -28,6 +29,7 @@ public sealed class AppState
     {
         SettingsStore = new SettingsStore(AppPaths.SettingsFile);
         SnapshotStore = new SnapshotStore(AppPaths.SnapshotsFile);
+        UsageHistoryStore = new UsageHistoryStore(AppPaths.UsageHistoryFile);
 
         _timer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -46,9 +48,14 @@ public sealed class AppState
 
     public SnapshotStore SnapshotStore { get; }
 
+    public UsageHistoryStore UsageHistoryStore { get; }
+
     public UsageSnapshot? CurrentSnapshot => CurrentSnapshots.FirstOrDefault();
 
     public IReadOnlyList<UsageSnapshot> CurrentSnapshots { get; private set; } = [];
+
+    public IReadOnlyDictionary<UsageWindowKey, DepletionPrediction> CurrentPredictions { get; private set; } =
+        new Dictionary<UsageWindowKey, DepletionPrediction>();
 
     public AppSettings CurrentSettings { get; private set; } = AppSettings.Default;
 
@@ -70,7 +77,9 @@ public sealed class AppState
         CurrentSettings = (await SettingsStore.LoadAsync(_shutdown.Token)).Normalize();
         await SettingsStore.SaveAsync(CurrentSettings, _shutdown.Token);
         _latestSnapshots = await SnapshotStore.LoadAllAsync(_shutdown.Token);
+        _usageHistory = await UsageHistoryStore.LoadAsync(_shutdown.Token);
         CurrentSnapshots = FilterSnapshotsByEnabledProviders(_latestSnapshots, CurrentSettings);
+        CurrentPredictions = BuildPredictions(CurrentSnapshots, _usageHistory, DateTimeOffset.UtcNow);
 
         ConfigureTimer();
         SettingsChanged?.Invoke(this, EventArgs.Empty);
@@ -374,8 +383,9 @@ public sealed class AppState
 
     private async Task ApplyRefreshedSnapshotsAsync(IEnumerable<UsageSnapshot> refreshed)
     {
+        var refreshedList = refreshed.ToList();
         var latestById = _latestSnapshots.ToDictionary(s => s.ProviderId, StringComparer.Ordinal);
-        foreach (var snapshot in refreshed)
+        foreach (var snapshot in refreshedList)
         {
             latestById[snapshot.ProviderId] = snapshot;
             _autoRefresh.RecordResult(snapshot);
@@ -383,6 +393,13 @@ public sealed class AppState
 
         _latestSnapshots = latestById.Values.ToList();
         CurrentSnapshots = FilterSnapshotsByEnabledProviders(_latestSnapshots, CurrentSettings);
+        var newSamples = CreateUsageSamples(refreshedList);
+        if (newSamples.Count > 0)
+        {
+            _usageHistory = await UsageHistoryStore.AppendAsync(newSamples, _shutdown.Token);
+        }
+
+        CurrentPredictions = BuildPredictions(CurrentSnapshots, _usageHistory, DateTimeOffset.UtcNow);
         _autoRefresh.RemoveMissingProviders(CurrentSettings.GetEffectiveProviders()
             .Where(provider => provider.IsEnabled)
             .Select(provider => provider.Id));
@@ -400,6 +417,83 @@ public sealed class AppState
         }
     }
 
+    public void SetSelectedCodexProfile(string profileId)
+    {
+        var normalized = CurrentSettings.Normalize();
+        if (normalized.SelectedCodexProfileId == profileId
+            || normalized.GetEffectiveCodexProfiles().All(profile => profile.Id != profileId))
+        {
+            return;
+        }
+
+        var refreshingSnapshot = new UsageSnapshot(
+            "codex",
+            "ChatGPT Codex",
+            DateTimeOffset.Now,
+            UsageSource.Agent,
+            UsageStatus.Refreshing,
+            []);
+        CurrentSnapshots = CurrentSnapshots
+            .Where(snapshot => snapshot.ProviderId != "codex")
+            .Append(refreshingSnapshot)
+            .ToList();
+        _latestSnapshots = _latestSnapshots
+            .Where(snapshot => snapshot.ProviderId != "codex")
+            .ToList();
+        CurrentPredictions = CurrentPredictions
+            .Where(item => item.Key.ProviderId != "codex")
+            .ToDictionary();
+
+        QueueSettingsUpdate(
+            "Save selected Codex profile",
+            settings => settings with { SelectedCodexProfileId = profileId },
+            refreshAfterSave: true);
+    }
+
+    public static IReadOnlyList<UsageSample> CreateUsageSamples(IEnumerable<UsageSnapshot> snapshots)
+    {
+        return snapshots
+            .Where(snapshot => snapshot.Status == UsageStatus.Fresh)
+            .SelectMany(snapshot => snapshot.Windows.Select(window => new UsageSample(
+                snapshot.ProviderId,
+                window.Id,
+                snapshot.CheckedAt.ToUniversalTime(),
+                window.ConsumedPercent(),
+                snapshot.AccountKey)))
+            .ToList();
+    }
+
+    public static IReadOnlyDictionary<UsageWindowKey, DepletionPrediction> BuildPredictions(
+        IReadOnlyList<UsageSnapshot> snapshots,
+        IReadOnlyList<UsageSample> history,
+        DateTimeOffset now)
+    {
+        var predictions = new Dictionary<UsageWindowKey, DepletionPrediction>();
+        foreach (var snapshot in snapshots.Where(snapshot => snapshot.Status == UsageStatus.Fresh))
+        {
+            foreach (var window in snapshot.Windows)
+            {
+                var key = new UsageWindowKey(snapshot.ProviderId, window.Id);
+                var samples = history
+                    .Where(sample => sample.ProviderId == key.ProviderId
+                        && sample.WindowId == key.WindowId
+                        && sample.AccountKey == snapshot.AccountKey)
+                    .ToList();
+                var prediction = DepletionPredictor.Predict(
+                    samples,
+                    window.ConsumedPercent(),
+                    window.ResetAt,
+                    now);
+                if (prediction.State != PredictionState.None)
+                {
+                    predictions[key] = prediction;
+                }
+            }
+        }
+
+        return predictions;
+    }
+
     public static IReadOnlyList<IUsageProvider> GetActiveProviders(AppSettings settings)
     {
         var effectiveProviders = settings.GetEffectiveProviders();
@@ -411,7 +505,7 @@ public sealed class AppState
 
         return ProviderCatalog.KnownProviders
             .Where(provider => enabledById.Contains(provider.Id))
-            .Select(provider => CreateUsageProvider(provider, settingsById[provider.Id]))
+            .Select(provider => CreateUsageProvider(provider, settingsById[provider.Id], settings))
             .ToList();
     }
 
@@ -429,11 +523,15 @@ public sealed class AppState
             .ToList();
     }
 
-    private static IUsageProvider CreateUsageProvider(ProviderCatalogItem provider, ProviderSetting setting)
+    private static IUsageProvider CreateUsageProvider(
+        ProviderCatalogItem provider,
+        ProviderSetting setting,
+        AppSettings appSettings)
     {
         if (provider.Id == "codex")
         {
-            return new CodexUsageProvider(ToCodexUsageMode(setting.Mode));
+            var profile = appSettings.GetSelectedCodexProfile();
+            return new CodexUsageProvider(ToCodexUsageMode(setting.Mode), profile.AuthPath);
         }
 
         if (provider.Id == "claude")

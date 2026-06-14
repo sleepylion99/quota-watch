@@ -247,6 +247,37 @@ public sealed class UsageOverviewViewModelTests
     }
 
     [Fact]
+    public void UpdateDoesNotDuplicatePrimaryPredictionForAntigravity()
+    {
+        var snapshot = AntigravitySnapshot();
+        var firstWindow = snapshot.Windows.OrderByDescending(window => window.PercentRemaining).First();
+        var prediction = new DepletionPrediction(
+            PredictionState.WaitingForChange,
+            null,
+            null,
+            0,
+            [
+                new UsageSample(snapshot.ProviderId, firstWindow.Id, snapshot.CheckedAt.AddMinutes(-3), 0),
+                new UsageSample(snapshot.ProviderId, firstWindow.Id, snapshot.CheckedAt, 0)
+            ]);
+        var viewModel = new UsageViewModel();
+
+        viewModel.Update(
+            [snapshot],
+            isRefreshing: false,
+            LimitDisplayMode.Bars,
+            AppLanguage.Korean,
+            predictions: new Dictionary<UsageWindowKey, DepletionPrediction>
+            {
+                [new(snapshot.ProviderId, firstWindow.Id)] = prediction
+            });
+
+        var provider = Assert.Single(viewModel.Providers);
+        Assert.False(provider.ShowPrediction);
+        Assert.True(provider.Windows[0].ShowPrediction);
+    }
+
+    [Fact]
     public void UpdateFormatsClaudeWindowsAsUsedPercentWithUsageBasedColors()
     {
         var snapshot = new UsageSnapshot(
@@ -1587,6 +1618,63 @@ public sealed class UsageOverviewViewModelTests
         var provider = Assert.Single(viewModel.Providers);
         Assert.Equal("시간 초과", ReadStringProperty(provider, "FailureBadgeText"));
         Assert.Equal("시간 초과", ReadStringProperty(provider, "StatusBadgeText"));
+    }
+
+    [Fact]
+    public void CodexProviderExposesConfiguredProfilesAndSelection()
+    {
+        var snapshot = Snapshot("codex");
+        var profiles = new[]
+        {
+            new CodexProfileSetting(CodexProfileSetting.DefaultId, "Default", @"C:\Codex\default\auth.json", true),
+            new CodexProfileSetting("work", "Work", @"C:\Codex\work\auth.json")
+        };
+        var viewModel = new UsageViewModel();
+
+        viewModel.Update(
+            [snapshot],
+            isRefreshing: false,
+            LimitDisplayMode.Bars,
+            AppLanguage.English,
+            codexProfiles: profiles,
+            selectedCodexProfileId: "work");
+
+        var provider = Assert.Single(viewModel.Providers);
+        Assert.True(provider.ShowCodexProfileSelector);
+        Assert.Equal("work", provider.SelectedCodexProfileId);
+        Assert.Collection(
+            provider.CodexProfiles,
+            profile =>
+            {
+                Assert.Equal(CodexProfileSetting.DefaultId, profile.Id);
+                Assert.False(profile.IsSelected);
+            },
+            profile =>
+            {
+                Assert.Equal("work", profile.Id);
+                Assert.True(profile.IsSelected);
+            });
+    }
+
+    [Fact]
+    public void NonCodexProviderHidesProfileSelector()
+    {
+        var viewModel = new UsageViewModel();
+
+        viewModel.Update(
+            [Snapshot("claude")],
+            isRefreshing: false,
+            LimitDisplayMode.Bars,
+            AppLanguage.English,
+            codexProfiles:
+            [
+                new CodexProfileSetting(CodexProfileSetting.DefaultId, "Default", @"C:\Codex\auth.json", true)
+            ],
+            selectedCodexProfileId: CodexProfileSetting.DefaultId);
+
+        var provider = Assert.Single(viewModel.Providers);
+        Assert.False(provider.ShowCodexProfileSelector);
+        Assert.Empty(provider.CodexProfiles);
     }
 
     private static UsageSnapshot AntigravitySnapshot()

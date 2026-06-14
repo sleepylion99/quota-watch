@@ -241,6 +241,12 @@ internal static class AppStringKeys
     public const string PercentUsedValue = nameof(PercentUsedValue);
     public const string PercentLeftValue = nameof(PercentLeftValue);
     public const string ConfidenceValue = nameof(ConfidenceValue);
+    public const string PredictionDepleteIn = nameof(PredictionDepleteIn);
+    public const string PredictionCollecting = nameof(PredictionCollecting);
+    public const string PredictionWaitingForChange = nameof(PredictionWaitingForChange);
+    public const string PredictionDepleted = nameof(PredictionDepleted);
+    public const string PredictionNoDepletion = nameof(PredictionNoDepletion);
+    public const string PredictionDepletionAt = nameof(PredictionDepletionAt);
 
     // Provider setting item
     public const string SetupHintAntigravity = nameof(SetupHintAntigravity);

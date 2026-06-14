@@ -97,8 +97,8 @@ public sealed class ClaudeUsageProvider : IUsageProvider
 
     private static UsageWindow BuildWindow(string id, string label, ClaudeOAuthUsageWindow window)
     {
-        var usedPercent = Math.Clamp(
-            (int)Math.Round(window.Utilization ?? 0, MidpointRounding.AwayFromZero), 0, 100);
+        var preciseUsedPercent = Math.Clamp(window.Utilization ?? 0, 0, 100);
+        var usedPercent = (int)Math.Round(preciseUsedPercent, MidpointRounding.AwayFromZero);
         return new UsageWindow(
             id,
             label,
@@ -106,7 +106,8 @@ public sealed class ClaudeUsageProvider : IUsageProvider
             ParseReset(window.ResetsAt),
             null,
             "high",
-            IsUsedPercent: true);
+            IsUsedPercent: true,
+            PrecisePercent: preciseUsedPercent);
     }
 
     private UsageSnapshot Failed(string message)

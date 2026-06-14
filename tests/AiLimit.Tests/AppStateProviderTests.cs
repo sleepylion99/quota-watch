@@ -46,6 +46,33 @@ public sealed class AppStateProviderTests
     }
 
     [Fact]
+    public void GetActiveProvidersUsesSelectedCodexProfileAuthPath()
+    {
+        var authPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "codex-work", "auth.json"));
+        var settings = AppSettings.Default with
+        {
+            CodexProfiles =
+            [
+                new CodexProfileSetting("work", "Work", authPath)
+            ],
+            SelectedCodexProfileId = "work"
+        };
+
+        var active = AppState.GetActiveProviders(settings);
+
+        var codex = Assert.IsType<CodexUsageProvider>(active.Single(provider => provider.Descriptor.Id == "codex"));
+        var client = typeof(CodexUsageProvider)
+            .GetField("_client", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(codex);
+        var composite = Assert.IsType<CodexCompositeRateLimitClient>(client);
+        var wham = Assert.IsType<CodexWhamRateLimitClient>(composite.Clients[0]);
+        var selectedPath = typeof(CodexWhamRateLimitClient)
+            .GetField("_authPath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(wham);
+        Assert.Equal(authPath, selectedPath);
+    }
+
+    [Fact]
     public void SetProviderEnabledUpdatesCurrentSettings()
     {
         var state = new AppState();
@@ -53,6 +80,30 @@ public sealed class AppStateProviderTests
         state.SetProviderEnabled("codex", false);
 
         Assert.False(state.CurrentSettings.GetEffectiveProviders().Single(provider => provider.Id == "codex").IsEnabled);
+    }
+
+    [Fact]
+    public void SetSelectedCodexProfileUpdatesCurrentSettings()
+    {
+        var state = new AppState();
+        var profiles = new[]
+        {
+            new CodexProfileSetting(CodexProfileSetting.DefaultId, "Default", CodexProfilePaths.DefaultAuthPath(), true),
+            new CodexProfileSetting("work", "Work", Path.Combine(Path.GetTempPath(), "work", "auth.json"))
+        };
+        typeof(AppState)
+            .GetProperty(nameof(AppState.CurrentSettings))!
+            .SetValue(state, AppSettings.Default with { CodexProfiles = profiles });
+        typeof(AppState)
+            .GetProperty(nameof(AppState.CurrentSnapshots))!
+            .SetValue(state, new[] { Snapshot("codex"), Snapshot("claude") });
+
+        state.SetSelectedCodexProfile("work");
+
+        Assert.Equal("work", state.CurrentSettings.SelectedCodexProfileId);
+        var codex = Assert.Single(state.CurrentSnapshots, snapshot => snapshot.ProviderId == "codex");
+        Assert.Equal(UsageStatus.Refreshing, codex.Status);
+        Assert.Empty(codex.Windows);
     }
 
     [Fact]

@@ -202,4 +202,10 @@
   <data name="LimitWarningDismiss" xml:space="preserve"><value>Dismiss</value></data>
   <data name="LimitWarningBodyUsedPercent" xml:space="preserve"><value>{0} {1}: {2}% used.</value></data>
   <data name="LimitWarningBodyRemaining" xml:space="preserve"><value>{0} {1}: {2}% left.</value></data>
+  <data name="PredictionDepleteIn" xml:space="preserve"><value>About {0} until depletion</value></data>
+  <data name="PredictionCollecting" xml:space="preserve"><value>Collecting usage data for prediction ({0}/{1})</value></data>
+  <data name="PredictionWaitingForChange" xml:space="preserve"><value>Waiting for usage change to estimate depletion</value></data>
+  <data name="PredictionDepleted" xml:space="preserve"><value>Limit already depleted</value></data>
+  <data name="PredictionNoDepletion" xml:space="preserve"><value>At current rate, won't hit this window's limit</value></data>
+  <data name="PredictionDepletionAt" xml:space="preserve"><value>Expected around {0:t}</value></data>
 </root>

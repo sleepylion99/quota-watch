@@ -11,4 +11,6 @@ public static class AppPaths
     public static string SettingsFile => Path.Combine(AppDataDirectory, "settings.json");
 
     public static string SnapshotsFile => Path.Combine(AppDataDirectory, "snapshots.json");
+
+    public static string UsageHistoryFile => Path.Combine(AppDataDirectory, "history.json");
 }

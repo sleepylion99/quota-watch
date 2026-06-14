@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using AiLimit.App.Localization;
@@ -50,6 +51,13 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     public string PinWindowTooltipText { get; private set; } = "Keep window on top";
     public string ModelSettingsButtonText { get; private set; } = "Model Settings";
     public string ModelSettingsDetailText { get; private set; } = "Choose which providers appear on the dashboard.";
+    public string CodexProfilesTitleText { get; private set; } = "Codex profiles";
+    public string CodexProfilesDetailText { get; private set; } = "Register auth.json files for other Codex accounts.";
+    public string CodexProfileNameLabelText { get; private set; } = "Profile name";
+    public string CodexProfilePathLabelText { get; private set; } = "auth.json";
+    public string CodexProfileBrowseButtonText { get; private set; } = "Browse";
+    public string CodexProfileAddButtonText { get; private set; } = "Add profile";
+    public string CodexProfileRemoveButtonText { get; private set; } = "Remove";
     public string AntigravityOAuthTitleText { get; private set; } = "Antigravity OAuth";
     public string AntigravityOAuthDetailText { get; private set; } = "Optional setup for checking Antigravity after the IDE is closed. Values are securely encrypted on this device.";
     public string AntigravityOAuthClientIdLabelText { get; private set; } = "OAuth client ID";
@@ -83,6 +91,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
 
     public ObservableCollection<ProviderUsageItemViewModel> Providers { get; } = [];
     public ObservableCollection<ProviderSettingItemViewModel> ProviderSettings { get; } = [];
+    public ObservableCollection<CodexProfileSettingItemViewModel> CodexProfileSettings { get; } = [];
     public ObservableCollection<LanguageOptionViewModel> LanguageOptions { get; } = [];
     public ObservableCollection<ThemeOptionViewModel> ThemeOptions { get; } = [];
     public ObservableCollection<LimitWarningThresholdOptionViewModel> LimitWarningThresholdOptions { get; } = [];
@@ -102,7 +111,10 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         IReadOnlyList<ProviderLimitWarningSetting>? limitWarningSettings = null,
         AppThemeMode themeMode = AppThemeMode.System,
         double dashboardOpacity = 1.0,
-        double widgetOpacity = 1.0)
+        double widgetOpacity = 1.0,
+        IReadOnlyDictionary<UsageWindowKey, DepletionPrediction>? predictions = null,
+        IReadOnlyList<CodexProfileSetting>? codexProfiles = null,
+        string? selectedCodexProfileId = null)
     {
         var displayLanguage = AppLanguageResolver.Resolve(language);
         ApplyLanguage(displayLanguage);
@@ -115,6 +127,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             limitWarningSettings,
             displayLanguage);
         UpdateProviderSettings(providerSettings ?? [], displayLanguage);
+        UpdateCodexProfileSettings(codexProfiles ?? [], displayLanguage);
         UpdateAntigravityOAuthActiveClient(antigravityActiveClientOrigin, displayLanguage);
 
         Providers.Clear();
@@ -130,7 +143,15 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             settingsById.TryGetValue(snapshot.ProviderId, out var setting);
             ProviderAutoRefreshStatus? autoRefreshStatus = null;
             autoRefreshStatuses?.TryGetValue(snapshot.ProviderId, out autoRefreshStatus);
-            Providers.Add(new ProviderUsageItemViewModel(snapshot, displayMode, displayLanguage, setting, autoRefreshStatus));
+            Providers.Add(new ProviderUsageItemViewModel(
+                snapshot,
+                displayMode,
+                displayLanguage,
+                setting,
+                autoRefreshStatus,
+                predictions,
+                codexProfiles,
+                selectedCodexProfileId));
         }
 
         if (snapshots.Count == 0)
@@ -187,6 +208,31 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                 existing.ModeOptions = [];
                 existing.SetupHintText = ProviderSettingItemViewModel.CreateSetupHint(setting.Id, language);
             }
+        }
+    }
+
+    private void UpdateCodexProfileSettings(
+        IReadOnlyList<CodexProfileSetting> profiles,
+        AppLanguage language)
+    {
+        CodexProfileSettings.Clear();
+        foreach (var profile in profiles)
+        {
+            var badge = profile.IsDefault
+                ? language switch
+                {
+                    AppLanguage.Korean => "현재 계정",
+                    AppLanguage.Japanese => "現在のアカウント",
+                    AppLanguage.Chinese => "当前帐户",
+                    _ => "Current account"
+                }
+                : string.Empty;
+            CodexProfileSettings.Add(new CodexProfileSettingItemViewModel(
+                profile.Id,
+                profile.DisplayName,
+                profile.AuthPath,
+                profile.IsDefault,
+                badge));
         }
     }
 
@@ -325,6 +371,49 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         PinWindowTooltipText = AppText.Get(language, AppStringKeys.PinWindowTooltip);
         ModelSettingsButtonText = AppText.Get(language, AppStringKeys.ModelSettingsButtonText);
         ModelSettingsDetailText = AppText.Get(language, AppStringKeys.ModelSettingsDetailText);
+        CodexProfilesTitleText = language switch
+        {
+            AppLanguage.Korean => "Codex 프로필",
+            AppLanguage.Japanese => "Codex プロファイル",
+            AppLanguage.Chinese => "Codex 配置文件",
+            _ => "Codex profiles"
+        };
+        CodexProfilesDetailText = language switch
+        {
+            AppLanguage.Korean => "다른 Codex 계정의 auth.json을 등록합니다. 토큰은 별도로 저장하지 않습니다.",
+            AppLanguage.Japanese => "別の Codex アカウントの auth.json を登録します。トークンは別途保存しません。",
+            AppLanguage.Chinese => "注册其他 Codex 帐户的 auth.json。不会另行保存令牌。",
+            _ => "Register auth.json files for other Codex accounts. Tokens are not copied."
+        };
+        CodexProfileNameLabelText = language switch
+        {
+            AppLanguage.Korean => "프로필 이름",
+            AppLanguage.Japanese => "プロファイル名",
+            AppLanguage.Chinese => "配置文件名称",
+            _ => "Profile name"
+        };
+        CodexProfilePathLabelText = "auth.json";
+        CodexProfileBrowseButtonText = language switch
+        {
+            AppLanguage.Korean => "찾아보기",
+            AppLanguage.Japanese => "参照",
+            AppLanguage.Chinese => "浏览",
+            _ => "Browse"
+        };
+        CodexProfileAddButtonText = language switch
+        {
+            AppLanguage.Korean => "프로필 추가",
+            AppLanguage.Japanese => "プロファイルを追加",
+            AppLanguage.Chinese => "添加配置文件",
+            _ => "Add profile"
+        };
+        CodexProfileRemoveButtonText = language switch
+        {
+            AppLanguage.Korean => "삭제",
+            AppLanguage.Japanese => "削除",
+            AppLanguage.Chinese => "删除",
+            _ => "Remove"
+        };
         LanguageSettingsTitleText = AppText.Get(language, AppStringKeys.LanguageSettingsTitleText);
         LanguageSettingsDetailText = AppText.Get(language, AppStringKeys.LanguageSettingsDetailText);
         ThemeSettingsTitleText = AppText.Get(language, AppStringKeys.ThemeSettingsTitleText);
@@ -616,6 +705,14 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(DiagnosticLogDetailText));
         OnPropertyChanged(nameof(TrackProviderLabel));
         OnPropertyChanged(nameof(ProviderSettings));
+        OnPropertyChanged(nameof(CodexProfilesTitleText));
+        OnPropertyChanged(nameof(CodexProfilesDetailText));
+        OnPropertyChanged(nameof(CodexProfileNameLabelText));
+        OnPropertyChanged(nameof(CodexProfilePathLabelText));
+        OnPropertyChanged(nameof(CodexProfileBrowseButtonText));
+        OnPropertyChanged(nameof(CodexProfileAddButtonText));
+        OnPropertyChanged(nameof(CodexProfileRemoveButtonText));
+        OnPropertyChanged(nameof(CodexProfileSettings));
         OnPropertyChanged(nameof(LanguageOptions));
         OnPropertyChanged(nameof(ThemeOptions));
     }
@@ -656,6 +753,7 @@ public sealed class ProviderSettingItemViewModel : INotifyPropertyChanged
 
     public string Id { get; }
     public string DisplayName { get; }
+    public bool SupportsProfiles => Id == "codex";
     public bool HasModeOptions => ModeOptions.Count > 0;
     public bool HasSetupHint => !string.IsNullOrWhiteSpace(SetupHintText);
 
@@ -749,6 +847,16 @@ public sealed record ProviderModeOptionViewModel(string Value, string Label)
 }
 
 public sealed record ThemeOptionViewModel(AppThemeMode Mode, string Label, bool IsSelected);
+
+public sealed record CodexProfileSettingItemViewModel(
+    string Id,
+    string DisplayName,
+    string AuthPath,
+    bool IsDefault,
+    string BadgeText)
+{
+    public bool IsRemovable => !IsDefault;
+}
 
 public sealed class LanguageOptionViewModel : INotifyPropertyChanged
 {
@@ -1028,11 +1136,28 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
         LimitDisplayMode displayMode,
         AppLanguage language,
         ProviderSetting? setting = null,
-        ProviderAutoRefreshStatus? autoRefreshStatus = null)
+        ProviderAutoRefreshStatus? autoRefreshStatus = null,
+        IReadOnlyDictionary<UsageWindowKey, DepletionPrediction>? predictions = null,
+        IReadOnlyList<CodexProfileSetting>? codexProfiles = null,
+        string? selectedCodexProfileId = null)
     {
         _language = language;
         ProviderName = snapshot.DisplayName;
         ProviderId = snapshot.ProviderId;
+        ShowCodexProfileSelector = snapshot.ProviderId == "codex" && codexProfiles is { Count: > 1 };
+        SelectedCodexProfileId = selectedCodexProfileId ?? CodexProfileSetting.DefaultId;
+        if (ShowCodexProfileSelector)
+        {
+            foreach (var profile in codexProfiles!)
+            {
+                CodexProfiles.Add(new CodexProfileOptionViewModel(
+                    profile.Id,
+                    profile.DisplayName,
+                    profile.AuthPath,
+                    profile.IsDefault,
+                    profile.Id == SelectedCodexProfileId));
+            }
+        }
         LimitProfileText = CreateLimitProfileText(snapshot, setting, language);
         LimitProfileToolTipText = CreateLimitProfileToolTipText(snapshot, setting, language);
         StatusText = StatusToText(snapshot.Status, language);
@@ -1136,6 +1261,27 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
                 : FormatReset(primary, language);
         ShowPrimaryBar = displayMode == LimitDisplayMode.Bars && primary is not null;
         ShowPrimaryProgress = ShowPrimarySummary && ShowPrimaryBar;
+        DepletionPrediction? primaryPrediction = null;
+        if (primary is not null)
+        {
+            predictions?.TryGetValue(new UsageWindowKey(snapshot.ProviderId, primary.Id), out primaryPrediction);
+        }
+
+        ApplyPrediction(
+            primaryPrediction,
+            language,
+            out var predictionText,
+            out var predictionDetailText,
+            out var sparklinePoints,
+            out var sparklineProjectionPoints);
+        ShowPrediction = ShowPrimarySummary
+            && primaryPrediction?.State is
+                PredictionState.Collecting or PredictionState.WaitingForChange or PredictionState.Depleted
+                or PredictionState.WillDeplete or PredictionState.ResetsFirst;
+        PredictionText = predictionText;
+        PredictionDetailText = predictionDetailText;
+        SparklinePoints = sparklinePoints;
+        SparklineProjectionPoints = sparklineProjectionPoints;
 
         if (displayMode is LimitDisplayMode.BothText or LimitDisplayMode.Bars)
         {
@@ -1144,7 +1290,15 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
                 : orderedWindows.Where(w => w.Id != primary?.Id);
             foreach (var window in detailWindows)
             {
-                Windows.Add(new UsageWindowItemViewModel(window, displayMode == LimitDisplayMode.Bars, language));
+                DepletionPrediction? windowPrediction = null;
+                predictions?.TryGetValue(
+                    new UsageWindowKey(snapshot.ProviderId, window.Id),
+                    out windowPrediction);
+                Windows.Add(new UsageWindowItemViewModel(
+                    window,
+                    displayMode == LimitDisplayMode.Bars,
+                    language,
+                    windowPrediction));
             }
         }
 
@@ -1242,6 +1396,9 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
 
     public string ProviderName { get; }
     public string ProviderId { get; }
+    public bool ShowCodexProfileSelector { get; }
+    public string SelectedCodexProfileId { get; }
+    public ObservableCollection<CodexProfileOptionViewModel> CodexProfiles { get; } = [];
     public string LimitProfileText { get; }
     public string LimitProfileToolTipText { get; }
     public string StatusText { get; }
@@ -1278,6 +1435,11 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
     public bool ShowPrimarySummary { get; }
     public bool ShowPrimaryBar { get; }
     public bool ShowPrimaryProgress { get; }
+    public bool ShowPrediction { get; }
+    public string PredictionText { get; }
+    public string PredictionDetailText { get; }
+    public string SparklinePoints { get; }
+    public string SparklineProjectionPoints { get; }
     public string BrandColorBrush { get; }
     public ObservableCollection<UsageWindowItemViewModel> Windows { get; } = [];
     public ObservableCollection<UsageWindowItemViewModel> VisibleWindows { get; } = [];
@@ -1292,6 +1454,110 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
             >= 50 => BrushKey.UrgencyMedium,
             _ => BrushKey.UrgencyLow
         };
+    }
+
+    internal static void ApplyPrediction(
+        DepletionPrediction? prediction,
+        AppLanguage language,
+        out string predictionText,
+        out string predictionDetailText,
+        out string sparklinePoints,
+        out string sparklineProjectionPoints)
+    {
+        predictionText = string.Empty;
+        predictionDetailText = string.Empty;
+        sparklinePoints = string.Empty;
+        sparklineProjectionPoints = string.Empty;
+        if (prediction?.State is not (
+            PredictionState.Collecting or PredictionState.WaitingForChange or PredictionState.Depleted
+            or PredictionState.WillDeplete or PredictionState.ResetsFirst))
+        {
+            return;
+        }
+
+        predictionText = prediction.State switch
+        {
+            PredictionState.Collecting => AppText.Get(
+                language,
+                AppStringKeys.PredictionCollecting,
+                Math.Min(prediction.TrendSamples.Count, DepletionPredictor.MinimumSampleCount),
+                DepletionPredictor.MinimumSampleCount),
+            PredictionState.WaitingForChange => AppText.Get(
+                language,
+                AppStringKeys.PredictionWaitingForChange),
+            PredictionState.Depleted => AppText.Get(language, AppStringKeys.PredictionDepleted),
+            PredictionState.WillDeplete => AppText.Get(
+                language,
+                AppStringKeys.PredictionDepleteIn,
+                FormatPredictionDuration(prediction.TimeRemaining ?? TimeSpan.Zero, language)),
+            _ => AppText.Get(language, AppStringKeys.PredictionNoDepletion)
+        };
+        if (prediction.State == PredictionState.WillDeplete && prediction.DepletionAt is not null)
+        {
+            predictionDetailText = AppText.Get(
+                language,
+                AppStringKeys.PredictionDepletionAt,
+                prediction.DepletionAt.Value.LocalDateTime);
+        }
+
+        (sparklinePoints, sparklineProjectionPoints) = BuildSparklinePoints(prediction);
+    }
+
+    private static string FormatPredictionDuration(TimeSpan duration, AppLanguage language)
+    {
+        var totalMinutes = Math.Max(1, (int)Math.Round(duration.TotalMinutes));
+        var days = totalMinutes / (24 * 60);
+        var hours = totalMinutes % (24 * 60) / 60;
+        var minutes = totalMinutes % 60;
+        return AppLanguageResolver.Resolve(language) switch
+        {
+            AppLanguage.Korean when days > 0 => $"{days}일 {hours}시간",
+            AppLanguage.Korean when hours > 0 => $"{hours}시간 {minutes}분",
+            AppLanguage.Korean => $"{minutes}분",
+            AppLanguage.Japanese when days > 0 => $"{days}日 {hours}時間",
+            AppLanguage.Japanese when hours > 0 => $"{hours}時間 {minutes}分",
+            AppLanguage.Japanese => $"{minutes}分",
+            AppLanguage.Chinese when days > 0 => $"{days}天 {hours}小时",
+            AppLanguage.Chinese when hours > 0 => $"{hours}小时 {minutes}分钟",
+            AppLanguage.Chinese => $"{minutes}分钟",
+            _ when days > 0 => $"{days}d {hours}h",
+            _ when hours > 0 => $"{hours}h {minutes}m",
+            _ => $"{minutes}m"
+        };
+    }
+
+    private static (string History, string Projection) BuildSparklinePoints(DepletionPrediction prediction)
+    {
+        const double width = 240;
+        const double height = 44;
+        const double padding = 2;
+        var samples = prediction.TrendSamples.OrderBy(sample => sample.AtUtc).ToList();
+        if (samples.Count < 2)
+        {
+            return (string.Empty, string.Empty);
+        }
+
+        var start = samples[0].AtUtc;
+        var last = samples[^1];
+        var end = prediction.State == PredictionState.WillDeplete && prediction.DepletionAt > last.AtUtc
+            ? prediction.DepletionAt.Value
+            : last.AtUtc;
+        var totalSeconds = Math.Max(1, (end - start).TotalSeconds);
+        double X(DateTimeOffset at) =>
+            padding + Math.Clamp((at - start).TotalSeconds / totalSeconds, 0, 1) * (width - padding * 2);
+        double Y(double consumed) =>
+            height - padding - Math.Clamp(consumed, 0, 100) / 100 * (height - padding * 2);
+        string Point(double x, double y) =>
+            $"{x.ToString("0.##", CultureInfo.InvariantCulture)},{y.ToString("0.##", CultureInfo.InvariantCulture)}";
+
+        var history = string.Join(" ", samples.Select(sample => Point(X(sample.AtUtc), Y(sample.ConsumedPercent))));
+        var projection = prediction.State == PredictionState.WillDeplete && prediction.DepletionAt is not null
+            ? string.Join(
+                " ",
+                Point(X(last.AtUtc), Y(last.ConsumedPercent)),
+                Point(X(prediction.DepletionAt.Value), Y(100)))
+            : string.Empty;
+        return (history, projection);
     }
 
     private static int WindowSortRank(UsageWindow window)
@@ -1793,6 +2059,13 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
     }
 }
 
+public sealed record CodexProfileOptionViewModel(
+    string Id,
+    string DisplayName,
+    string AuthPath,
+    bool IsDefault,
+    bool IsSelected);
+
 internal enum ProviderFailureKind
 {
     OAuthSetupRequired,
@@ -1809,7 +2082,11 @@ internal enum ProviderFailureKind
 
 public sealed class UsageWindowItemViewModel : INotifyPropertyChanged
 {
-    public UsageWindowItemViewModel(UsageWindow window, bool showBar, AppLanguage language)
+    public UsageWindowItemViewModel(
+        UsageWindow window,
+        bool showBar,
+        AppLanguage language,
+        DepletionPrediction? prediction = null)
     {
         var usesUsedPercent = UsageWindowLabelText.IsUsedPercent(window);
         Label = usesUsedPercent
@@ -1830,6 +2107,20 @@ public sealed class UsageWindowItemViewModel : INotifyPropertyChanged
         ConfidenceText = AppText.Get(language, AppStringKeys.ConfidenceValue, window.Confidence);
         IsLowConfidence = window.Confidence == "medium";
         UrgencyBrush = ProviderUsageItemViewModel.ComputeUrgencyBrush(window.PercentRemaining, usesUsedPercent);
+        ProviderUsageItemViewModel.ApplyPrediction(
+            prediction,
+            language,
+            out var predictionText,
+            out var predictionDetailText,
+            out var sparklinePoints,
+            out var sparklineProjectionPoints);
+        ShowPrediction = prediction?.State is
+            PredictionState.Collecting or PredictionState.WaitingForChange or PredictionState.Depleted
+            or PredictionState.WillDeplete or PredictionState.ResetsFirst;
+        PredictionText = predictionText;
+        PredictionDetailText = predictionDetailText;
+        SparklinePoints = sparklinePoints;
+        SparklineProjectionPoints = sparklineProjectionPoints;
     }
 
     public string Label { get; }
@@ -1840,6 +2131,11 @@ public sealed class UsageWindowItemViewModel : INotifyPropertyChanged
     public string ConfidenceText { get; }
     public bool IsLowConfidence { get; }
     public string UrgencyBrush { get; }
+    public bool ShowPrediction { get; }
+    public string PredictionText { get; }
+    public string PredictionDetailText { get; }
+    public string SparklinePoints { get; }
+    public string SparklineProjectionPoints { get; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

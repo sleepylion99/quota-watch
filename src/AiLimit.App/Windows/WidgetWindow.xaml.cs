@@ -24,6 +24,8 @@ public partial class WidgetWindow : Window
 
         _state.SnapshotChanged += OnSnapshotChanged;
         _state.SettingsChanged += OnSettingsChanged;
+        SourceInitialized += OnSourceInitialized;
+        Activated += OnActivated;
         if (_state.ThemeService is not null)
         {
             _state.ThemeService.ThemeChanged += OnThemeChanged;
@@ -32,6 +34,8 @@ public partial class WidgetWindow : Window
         {
             _state.SnapshotChanged -= OnSnapshotChanged;
             _state.SettingsChanged -= OnSettingsChanged;
+            SourceInitialized -= OnSourceInitialized;
+            Activated -= OnActivated;
             if (_state.ThemeService is not null)
             {
                 _state.ThemeService.ThemeChanged -= OnThemeChanged;
@@ -86,14 +90,24 @@ public partial class WidgetWindow : Window
     private void ApplyAlwaysOnTop()
     {
         var isAlwaysOnTop = _state.CurrentSettings.IsWidgetAlwaysOnTop;
-        Topmost = isAlwaysOnTop;
+        NativeTopmost.Apply(this, isAlwaysOnTop);
         WidgetPinButton.IsChecked = isAlwaysOnTop;
+    }
+
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        ApplyAlwaysOnTop();
+    }
+
+    private void OnActivated(object? sender, EventArgs e)
+    {
+        ApplyAlwaysOnTop();
     }
 
     private void WidgetPinButton_Click(object sender, RoutedEventArgs e)
     {
         var isAlwaysOnTop = WidgetPinButton.IsChecked == true;
-        Topmost = isAlwaysOnTop;
+        NativeTopmost.Apply(this, isAlwaysOnTop);
         _state.SetWidgetAlwaysOnTop(isAlwaysOnTop);
     }
 
@@ -143,6 +157,7 @@ public partial class WidgetWindow : Window
             _state.CurrentSettings.GetEffectiveProviders(),
             themeMode: _state.CurrentSettings.ThemeMode,
             dashboardOpacity: _state.CurrentSettings.DashboardOpacity,
-            widgetOpacity: _state.CurrentSettings.WidgetOpacity);
+            widgetOpacity: _state.CurrentSettings.WidgetOpacity,
+            predictions: _state.CurrentPredictions);
     }
 }

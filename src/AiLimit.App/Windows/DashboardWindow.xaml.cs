@@ -27,6 +27,7 @@ public partial class DashboardWindow : Window
 
         _state.SnapshotChanged += OnSnapshotChanged;
         _state.SettingsChanged += OnSettingsChanged;
+        SourceInitialized += OnSourceInitialized;
         Activated += OnActivated;
         if (_state.ThemeService is not null)
         {
@@ -36,6 +37,7 @@ public partial class DashboardWindow : Window
         {
             _state.SnapshotChanged -= OnSnapshotChanged;
             _state.SettingsChanged -= OnSettingsChanged;
+            SourceInitialized -= OnSourceInitialized;
             Activated -= OnActivated;
             if (_state.ThemeService is not null)
             {
@@ -66,10 +68,45 @@ public partial class DashboardWindow : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+        if (e.ClickCount >= 2)
         {
-            DragMove();
+            WindowState = WindowState.Normal;
+            return;
         }
+
+        if (e.ButtonState != System.Windows.Input.MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        if (WindowState == WindowState.Maximized)
+        {
+            RestoreMaximizedWindowForDrag(e);
+        }
+
+        DragMove();
+    }
+
+    private void RestoreMaximizedWindowForDrag(System.Windows.Input.MouseButtonEventArgs e)
+    {
+        var pointer = e.GetPosition(this);
+        var horizontalRatio = ActualWidth <= 0 ? 0.5 : Math.Clamp(pointer.X / ActualWidth, 0, 1);
+        var restoreWidth = Math.Max(RestoreBounds.Width, MinWidth);
+        var restoreHeight = Math.Max(RestoreBounds.Height, MinHeight);
+        var screenPointer = PointToScreen(pointer);
+        var workArea = SystemParameters.WorkArea;
+
+        WindowState = WindowState.Normal;
+        Width = restoreWidth;
+        Height = restoreHeight;
+        Left = Math.Clamp(
+            screenPointer.X - restoreWidth * horizontalRatio,
+            workArea.Left,
+            workArea.Right - restoreWidth);
+        Top = Math.Clamp(
+            screenPointer.Y - Math.Min(pointer.Y, 30),
+            workArea.Top,
+            workArea.Bottom - restoreHeight);
     }
 
     private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
@@ -148,14 +185,14 @@ public partial class DashboardWindow : Window
     private void ApplyAlwaysOnTop()
     {
         var isAlwaysOnTop = _state.CurrentSettings.IsDashboardAlwaysOnTop;
-        Topmost = isAlwaysOnTop;
+        NativeTopmost.Apply(this, isAlwaysOnTop);
         DashboardPinButton.IsChecked = isAlwaysOnTop;
     }
 
     private void DashboardPinButton_Click(object sender, RoutedEventArgs e)
     {
         var isAlwaysOnTop = DashboardPinButton.IsChecked == true;
-        Topmost = isAlwaysOnTop;
+        NativeTopmost.Apply(this, isAlwaysOnTop);
         _state.SetDashboardAlwaysOnTop(isAlwaysOnTop);
     }
 
@@ -195,9 +232,33 @@ public partial class DashboardWindow : Window
         Dispatcher.Invoke(_viewModel.RaiseColorProperties);
     }
 
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        ApplyAlwaysOnTop();
+    }
+
+    private void CodexProfileSelector_SelectionChanged(
+        object sender,
+        System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.ComboBox
+            {
+                DataContext: ProviderUsageItemViewModel provider,
+                SelectedValue: string profileId
+            }
+            || provider.ProviderId != "codex"
+            || profileId == _state.CurrentSettings.SelectedCodexProfileId)
+        {
+            return;
+        }
+
+        _state.SetSelectedCodexProfile(profileId);
+    }
+
     private void OnActivated(object? sender, EventArgs e)
     {
         _state.ThemeService?.ReevaluateSystemTheme();
+        ApplyAlwaysOnTop();
     }
 
     private void UpdateThemeToggle(AppThemeMode mode, bool animate)
@@ -241,7 +302,10 @@ public partial class DashboardWindow : Window
             AntigravityUsageProvider.GetActiveOAuthClientOrigin(),
             themeMode: _state.CurrentSettings.ThemeMode,
             dashboardOpacity: _state.CurrentSettings.DashboardOpacity,
-            widgetOpacity: _state.CurrentSettings.WidgetOpacity);
+            widgetOpacity: _state.CurrentSettings.WidgetOpacity,
+            predictions: _state.CurrentPredictions,
+            codexProfiles: _state.CurrentSettings.GetEffectiveCodexProfiles(),
+            selectedCodexProfileId: _state.CurrentSettings.SelectedCodexProfileId);
         AppLog.Write(
             "Dashboard",
             $"ViewModel updated. snapshots={_state.CurrentSnapshots.Count}, settingsRows={_viewModel.ProviderSettings.Count}, refreshing={_state.IsRefreshing}, displayMode={LimitDisplayMode.Bars}, language={_state.CurrentSettings.Language}");

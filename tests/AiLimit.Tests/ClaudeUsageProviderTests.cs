@@ -60,6 +60,32 @@ public sealed class ClaudeUsageProviderTests
     }
 
     [Fact]
+    public async Task RefreshAsyncPreservesFractionalUsageForPrediction()
+    {
+        var client = new StubClaudeUsageClient(new ClaudeOAuthUsageResponse(
+            new ClaudeOAuthUsageWindow(42.25, null),
+            new ClaudeOAuthUsageWindow(36.125, null),
+            null,
+            null));
+        var provider = new ClaudeUsageProvider("claude", "Claude Code", client);
+
+        var snapshot = await provider.RefreshAsync(CancellationToken.None);
+
+        Assert.Collection(
+            snapshot.Windows,
+            window =>
+            {
+                Assert.Equal(42, window.PercentRemaining);
+                Assert.Equal(42.25, window.PrecisePercent);
+            },
+            window =>
+            {
+                Assert.Equal(36, window.PercentRemaining);
+                Assert.Equal(36.125, window.PrecisePercent);
+            });
+    }
+
+    [Fact]
     public async Task RefreshAsyncMapsOAuthUsageToOpusSpecificWeeklyWindow()
     {
         var client = new StubClaudeUsageClient(new ClaudeOAuthUsageResponse(

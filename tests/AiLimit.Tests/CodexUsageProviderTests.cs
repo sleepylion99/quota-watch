@@ -237,6 +237,37 @@ public sealed class CodexUsageProviderTests
             item => Assert.IsType<CodexAppServerRateLimitClient>(item));
     }
 
+    [Fact]
+    public void ExplicitProfileConfiguresBothCodexClientsForTheSameAccount()
+    {
+        var authPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "codex-work", "auth.json"));
+
+        var client = CodexCompositeRateLimitClient.CreateDefault(CodexUsageMode.Auto, authPath);
+
+        var composite = Assert.IsType<CodexCompositeRateLimitClient>(client);
+        var wham = Assert.IsType<CodexWhamRateLimitClient>(composite.Clients[0]);
+        var appServer = Assert.IsType<CodexAppServerRateLimitClient>(composite.Clients[1]);
+        Assert.Equal(authPath, ReadPrivateField<string>(wham, "_authPath"));
+        Assert.Equal(Path.GetDirectoryName(authPath), ReadPrivateField<string>(appServer, "_codexHome"));
+    }
+
+    [Fact]
+    public void AppServerStartInfoUsesSelectedProfileAsCodexHome()
+    {
+        var codexHome = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "codex-work"));
+
+        var startInfo = CodexAppServerRateLimitClient.CreateAppServerStartInfo("codex.cmd", codexHome);
+
+        Assert.Equal(codexHome, startInfo.Environment["CODEX_HOME"]);
+    }
+
+    private static T ReadPrivateField<T>(object instance, string fieldName)
+    {
+        return Assert.IsType<T>(instance.GetType()
+            .GetField(fieldName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(instance));
+    }
+
     private sealed class StubCodexRateLimitClient(CodexRpcRateLimits rateLimits) : ICodexRateLimitClient
     {
         public Task<CodexRpcRateLimits> ReadRateLimitsAsync(CancellationToken cancellationToken)

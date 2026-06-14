@@ -11,6 +11,49 @@ namespace AiLimit.Tests;
 public sealed class DashboardMarkupTests
 {
     [Fact]
+    public void DashboardAndWidgetRenderDepletionPrediction()
+    {
+        var dashboard = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml");
+        var widget = ReadSourceFile("src", "AiLimit.App", "Windows", "WidgetWindow.xaml");
+
+        Assert.Contains("Points=\"{Binding SparklinePoints}\"", dashboard);
+        Assert.Contains("Points=\"{Binding SparklineProjectionPoints}\"", dashboard);
+        Assert.Contains("Text=\"{Binding PredictionText}\"", dashboard);
+        Assert.Contains("Text=\"{Binding PredictionDetailText}\"", dashboard);
+        Assert.Contains("ShowPrediction", dashboard);
+
+        Assert.Contains("Text=\"{Binding PredictionText}\"", widget);
+        Assert.Contains("ShowPrediction", widget);
+    }
+
+    [Fact]
+    public void PinnedWindowsReapplyTopmostWhenActivated()
+    {
+        var dashboard = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml.cs");
+        var widget = ReadSourceFile("src", "AiLimit.App", "Windows", "WidgetWindow.xaml.cs");
+        var nativeTopmost = ReadSourceFile("src", "AiLimit.App", "Windows", "NativeTopmost.cs");
+
+        Assert.Contains("SourceInitialized += OnSourceInitialized", dashboard);
+        Assert.Contains("NativeTopmost.Apply(this, isAlwaysOnTop)", dashboard);
+        Assert.Contains("SourceInitialized += OnSourceInitialized", widget);
+        Assert.Contains("NativeTopmost.Apply(this, isAlwaysOnTop)", widget);
+        Assert.Contains("SetWindowPos", nativeTopmost);
+        Assert.Contains("HwndTopmost", nativeTopmost);
+        Assert.Contains("HwndNotTopmost", nativeTopmost);
+    }
+
+    [Fact]
+    public void DashboardTitleBarRestoresMaximizedWindowBeforeDragging()
+    {
+        var dashboard = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml.cs");
+
+        Assert.Contains("e.ClickCount >= 2", dashboard);
+        Assert.Contains("WindowState = WindowState.Normal", dashboard);
+        Assert.Contains("RestoreMaximizedWindowForDrag(e)", dashboard);
+        Assert.Contains("SystemParameters.WorkArea", dashboard);
+    }
+
+    [Fact]
     public void DashboardUsesBalancedPercentSizes()
     {
         var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml");
@@ -30,6 +73,21 @@ public sealed class DashboardMarkupTests
 
         Assert.Contains("Text=\"{Binding Label}\"", detailRows);
         Assert.Contains("Text=\"{Binding ResetText}\"", detailRows);
+    }
+
+    [Fact]
+    public void WidgetHidesPrimarySummaryWhenProviderUsesOnlyDetailRows()
+    {
+        var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "WidgetWindow.xaml");
+
+        var providerName = xaml.IndexOf("Text=\"{Binding ProviderName}\"", StringComparison.Ordinal);
+        var primarySummary = xaml.IndexOf("x:Name=\"WidgetPrimarySummary\"", StringComparison.Ordinal);
+        var detailRows = xaml.IndexOf("ItemsControl ItemsSource=\"{Binding VisibleWindows}\"", StringComparison.Ordinal);
+        Assert.True(providerName >= 0 && primarySummary > providerName && detailRows > primarySummary);
+
+        var primaryMarkup = xaml[primarySummary..detailRows];
+        Assert.Contains("Binding=\"{Binding ShowPrimarySummary}\"", primaryMarkup);
+        Assert.Contains("<Setter Property=\"Visibility\" Value=\"Collapsed\"", primaryMarkup);
     }
 
     [Fact]
@@ -331,7 +389,7 @@ public sealed class DashboardMarkupTests
         Assert.Contains("CornerRadius=\"8\"", xaml);
         Assert.Matches("Text=\"\\{Binding ProviderName\\}\"[\\s\\S]*?FontSize=\"17\"", xaml);
         Assert.DoesNotContain("Text=\"{Binding ProviderId}\"", xaml);
-        Assert.Contains("Text=\"{Binding LimitProfileText}\"", xaml);
+        Assert.DoesNotContain("Text=\"{Binding LimitProfileText}\"", xaml);
         Assert.Contains("Foreground=\"{DynamicResource Brush.Text.Secondary}\"", xaml);
         Assert.Contains(
             "Background=\"{Binding BrandColorBrush, Converter={StaticResource BrushKeyConverter}}\"",
@@ -1044,6 +1102,57 @@ public sealed class DashboardMarkupTests
         Assert.NotNull(ellipse);
         var fill = (string?)ellipse!.Attribute("Fill");
         Assert.Equal("{DynamicResource Brush.Indicator.Clean}", fill);
+    }
+
+    [Fact]
+    public void DashboardCodexCardHasProfileSelector()
+    {
+        var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml");
+        var code = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml.cs");
+
+        Assert.Contains("x:Name=\"CodexProfileSelector\"", xaml);
+        Assert.Contains("ItemsSource=\"{Binding CodexProfiles}\"", xaml);
+        Assert.Contains("SelectedValuePath=\"Id\"", xaml);
+        Assert.Contains("SelectionChanged=\"CodexProfileSelector_SelectionChanged\"", xaml);
+        Assert.Contains("_state.SetSelectedCodexProfile(profileId)", code);
+    }
+
+    [Fact]
+    public void SettingsWindowOpensSeparateCodexProfilesWindow()
+    {
+        var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml");
+        var code = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml.cs");
+        var profilesXaml = ReadSourceFile("src", "AiLimit.App", "Windows", "CodexProfilesWindow.xaml");
+        var profilesCode = ReadSourceFile("src", "AiLimit.App", "Windows", "CodexProfilesWindow.xaml.cs");
+
+        Assert.Contains("Click=\"ManageCodexProfilesButton_Click\"", xaml);
+        Assert.Contains("BasedOn=\"{StaticResource {x:Type Button}}\"", xaml);
+        Assert.DoesNotContain("x:Name=\"CodexProfilesSettingsCard\"", xaml);
+        Assert.Contains("new CodexProfilesWindow(_state)", code);
+        Assert.Contains("_codexProfilesWindow.Activate()", code);
+
+        Assert.Contains("x:Class=\"AiLimit.App.Windows.CodexProfilesWindow\"", profilesXaml);
+        Assert.Contains("WindowStyle=\"None\"", profilesXaml);
+        Assert.Contains("AllowsTransparency=\"True\"", profilesXaml);
+        Assert.Contains("Background=\"Transparent\"", profilesXaml);
+        Assert.Contains("CornerRadius=\"12\"", profilesXaml);
+        Assert.Contains("Background=\"{DynamicResource Brush.Surface.TitleBar}\"", profilesXaml);
+        Assert.Contains("Style=\"{StaticResource WindowMinimizeButtonStyle}\"", profilesXaml);
+        Assert.Contains("Style=\"{StaticResource WindowCloseButtonStyle}\"", profilesXaml);
+        Assert.Contains("MouseLeftButtonDown=\"Header_MouseLeftButtonDown\"", profilesXaml);
+        Assert.Contains("x:Name=\"ProfilesActionFooter\"", profilesXaml);
+        Assert.Contains("Header_MouseLeftButtonDown", profilesCode);
+        Assert.Contains("ProfilesMinimizeButton_Click", profilesCode);
+        Assert.Contains("x:Name=\"CodexProfileNameBox\"", profilesXaml);
+        Assert.Contains("BasedOn=\"{StaticResource {x:Type Button}}\"", profilesXaml);
+        Assert.Contains("x:Name=\"CodexProfilePathBox\"", profilesXaml);
+        Assert.Contains("InitialDirectory = GetCodexProfileBrowseDirectory()", profilesCode);
+        Assert.Contains("FileName = \"auth.json\"", profilesCode);
+        Assert.Contains("Click=\"BrowseCodexProfileButton_Click\"", profilesXaml);
+        Assert.Contains("Click=\"AddCodexProfileButton_Click\"", profilesXaml);
+        Assert.Contains("Click=\"RemoveCodexProfileButton_Click\"", profilesXaml);
+        Assert.Contains("OpenFileDialog", profilesCode);
+        Assert.Contains("CodexProfiles = profiles", profilesCode);
     }
 
     private static string RepoRoot()

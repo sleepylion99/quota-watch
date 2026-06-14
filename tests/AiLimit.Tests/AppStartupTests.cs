@@ -33,7 +33,7 @@ public sealed class AppStartupTests
 
         Assert.Contains("<AssemblyName>QuotaWatch</AssemblyName>", project);
         Assert.Contains("<Product>Quota Watch</Product>", project);
-        Assert.Contains("<Version>0.0.1</Version>", project);
+        Assert.Contains("<Version>0.0.2</Version>", project);
     }
 
     [Fact]
@@ -42,8 +42,8 @@ public sealed class AppStartupTests
         var script = ReadSourceFile("packaging", "build-release.ps1");
         var installer = ReadSourceFile("packaging", "inno", "Quota-Watch.iss");
 
-        Assert.Contains("[string]$Version = \"0.0.1\"", script);
-        Assert.Contains("#define AppVersion \"0.0.1\"", installer);
+        Assert.Contains("[string]$Version = \"0.0.2\"", script);
+        Assert.Contains("#define AppVersion \"0.0.2\"", installer);
     }
 
     [Fact]

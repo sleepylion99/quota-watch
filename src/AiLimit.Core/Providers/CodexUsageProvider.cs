@@ -21,6 +21,11 @@ public sealed class CodexUsageProvider : IUsageProvider
     {
     }
 
+    public CodexUsageProvider(CodexUsageMode mode, string authPath)
+        : this(CodexCompositeRateLimitClient.CreateDefault(mode, authPath), mode)
+    {
+    }
+
     internal CodexUsageProvider(ICodexRateLimitClient client, CodexUsageMode mode = CodexUsageMode.Auto)
     {
         _client = client;
@@ -208,6 +213,22 @@ internal sealed class CodexCompositeRateLimitClient(IReadOnlyList<ICodexRateLimi
     {
         var appServer = new CodexAppServerRateLimitClient();
         return new CodexCompositeRateLimitClient([new CodexWhamRateLimitClient(), appServer]);
+    }
+
+    public static ICodexRateLimitClient CreateDefault(CodexUsageMode mode, string authPath)
+    {
+        var normalizedAuthPath = Path.GetFullPath(authPath);
+        var codexHome = Path.GetDirectoryName(normalizedAuthPath)
+            ?? throw new ArgumentException("Codex auth path must have a parent directory.", nameof(authPath));
+        var wham = new CodexWhamRateLimitClient(
+            new HttpClient { Timeout = TimeSpan.FromSeconds(10) },
+            normalizedAuthPath);
+        var appServer = new CodexAppServerRateLimitClient(
+            CodexAppServerRateLimitClient.ResolveCodexExecutable(),
+            TimeSpan.FromSeconds(8),
+            TimeSpan.FromSeconds(4),
+            codexHome);
+        return new CodexCompositeRateLimitClient([wham, appServer]);
     }
 
     public async Task<CodexRpcRateLimits> ReadRateLimitsAsync(CancellationToken cancellationToken)
@@ -468,20 +489,23 @@ internal sealed class CodexAppServerRateLimitClient : ICodexRateLimitClient
     private readonly string _codexExecutable;
     private readonly TimeSpan _initializeTimeout;
     private readonly TimeSpan _requestTimeout;
+    private readonly string? _codexHome;
 
     public CodexAppServerRateLimitClient()
-        : this(ResolveCodexExecutable(), TimeSpan.FromSeconds(8), TimeSpan.FromSeconds(4))
+        : this(ResolveCodexExecutable(), TimeSpan.FromSeconds(8), TimeSpan.FromSeconds(4), null)
     {
     }
 
     public CodexAppServerRateLimitClient(
         string codexExecutable,
         TimeSpan initializeTimeout,
-        TimeSpan requestTimeout)
+        TimeSpan requestTimeout,
+        string? codexHome = null)
     {
         _codexExecutable = codexExecutable;
         _initializeTimeout = initializeTimeout;
         _requestTimeout = requestTimeout;
+        _codexHome = codexHome;
     }
 
     public async Task<CodexRpcRateLimits> ReadRateLimitsAsync(CancellationToken cancellationToken)
@@ -518,13 +542,18 @@ internal sealed class CodexAppServerRateLimitClient : ICodexRateLimitClient
 
     private Process StartProcess()
     {
-        var startInfo = CreateAppServerStartInfo(_codexExecutable);
+        var startInfo = CreateAppServerStartInfo(_codexExecutable, _codexHome);
 
         return Process.Start(startInfo)
             ?? throw new InvalidOperationException("Could not start Codex app-server.");
     }
 
     internal static ProcessStartInfo CreateAppServerStartInfo(string codexExecutable)
+    {
+        return CreateAppServerStartInfo(codexExecutable, null);
+    }
+
+    internal static ProcessStartInfo CreateAppServerStartInfo(string codexExecutable, string? codexHome)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -541,6 +570,10 @@ internal sealed class CodexAppServerRateLimitClient : ICodexRateLimitClient
         startInfo.ArgumentList.Add("-a");
         startInfo.ArgumentList.Add("untrusted");
         startInfo.ArgumentList.Add("app-server");
+        if (!string.IsNullOrWhiteSpace(codexHome))
+        {
+            startInfo.Environment["CODEX_HOME"] = codexHome;
+        }
 
         return startInfo;
     }
@@ -600,7 +633,7 @@ internal sealed class CodexAppServerRateLimitClient : ICodexRateLimitClient
             : error.Trim();
     }
 
-    private static string ResolveCodexExecutable()
+    internal static string ResolveCodexExecutable()
     {
         var configured = Environment.GetEnvironmentVariable("CODEX_CLI_PATH");
         if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured) && !IsUnsafeWindowsCodexLauncher(configured))

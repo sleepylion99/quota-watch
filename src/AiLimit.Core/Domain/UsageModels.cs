@@ -23,7 +23,8 @@ public sealed record UsageWindow(
     DateTimeOffset? ResetAt,
     string? ResetLabel,
     string Confidence,
-    bool IsUsedPercent = false);
+    bool IsUsedPercent = false,
+    double? PrecisePercent = null);
 
 public sealed record UsageSnapshot(
     string ProviderId,
