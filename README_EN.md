@@ -1,6 +1,6 @@
 # Quota Watch
 
-<img width="1611" height="778" alt="Quota Watch" src="https://github.com/user-attachments/assets/19241298-ef79-497c-9558-9cf802e5256b" />
+![Quota Watch](assets/banner.png)
 
 ---
 
