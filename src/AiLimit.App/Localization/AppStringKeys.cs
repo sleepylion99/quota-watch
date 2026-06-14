@@ -246,6 +246,8 @@ internal static class AppStringKeys
     public const string PredictionWaitingForChange = nameof(PredictionWaitingForChange);
     public const string PredictionDepleted = nameof(PredictionDepleted);
     public const string PredictionNoDepletion = nameof(PredictionNoDepletion);
+    public const string PredictionNoDepletionFiveHour = nameof(PredictionNoDepletionFiveHour);
+    public const string PredictionNoDepletionWeekly = nameof(PredictionNoDepletionWeekly);
     public const string PredictionDepletionAt = nameof(PredictionDepletionAt);
 
     // Provider setting item

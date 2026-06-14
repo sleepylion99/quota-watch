@@ -206,6 +206,8 @@
   <data name="PredictionCollecting" xml:space="preserve"><value>소진 예측 데이터 수집 중 ({0}/{1})</value></data>
   <data name="PredictionWaitingForChange" xml:space="preserve"><value>소진 예측을 위한 사용량 변화 감지 대기 중</value></data>
   <data name="PredictionDepleted" xml:space="preserve"><value>이미 한도를 소진했습니다</value></data>
-  <data name="PredictionNoDepletion" xml:space="preserve"><value>현재 추세로는 이번 창 내 한도 미도달</value></data>
+  <data name="PredictionNoDepletion" xml:space="preserve"><value>현재 추세로는 이번 한도까지 도달 안 함</value></data>
+  <data name="PredictionNoDepletionFiveHour" xml:space="preserve"><value>현재 추세로는 이번 5시간 한도 도달 안 함</value></data>
+  <data name="PredictionNoDepletionWeekly" xml:space="preserve"><value>현재 추세로는 이번주 주간 한도 도달 안 함</value></data>
   <data name="PredictionDepletionAt" xml:space="preserve"><value>{0:t}경 소진 예상</value></data>
 </root>

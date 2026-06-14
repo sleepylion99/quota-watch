@@ -207,5 +207,7 @@
   <data name="PredictionWaitingForChange" xml:space="preserve"><value>Waiting for usage change to estimate depletion</value></data>
   <data name="PredictionDepleted" xml:space="preserve"><value>Limit already depleted</value></data>
   <data name="PredictionNoDepletion" xml:space="preserve"><value>At current rate, won't hit this window's limit</value></data>
+  <data name="PredictionNoDepletionFiveHour" xml:space="preserve"><value>At current rate, won't hit this 5h limit</value></data>
+  <data name="PredictionNoDepletionWeekly" xml:space="preserve"><value>At current rate, won't hit this week's limit</value></data>
   <data name="PredictionDepletionAt" xml:space="preserve"><value>Expected around {0:t}</value></data>
 </root>

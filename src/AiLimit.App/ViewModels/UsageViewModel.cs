@@ -1269,6 +1269,7 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
 
         ApplyPrediction(
             primaryPrediction,
+            primary,
             language,
             out var predictionText,
             out var predictionDetailText,
@@ -1458,6 +1459,7 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
 
     internal static void ApplyPrediction(
         DepletionPrediction? prediction,
+        UsageWindow? window,
         AppLanguage language,
         out string predictionText,
         out string predictionDetailText,
@@ -1490,7 +1492,7 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
                 language,
                 AppStringKeys.PredictionDepleteIn,
                 FormatPredictionDuration(prediction.TimeRemaining ?? TimeSpan.Zero, language)),
-            _ => AppText.Get(language, AppStringKeys.PredictionNoDepletion)
+            _ => AppText.Get(language, NoDepletionKeyFor(window))
         };
         if (prediction.State == PredictionState.WillDeplete && prediction.DepletionAt is not null)
         {
@@ -1501,6 +1503,26 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
         }
 
         (sparklinePoints, sparklineProjectionPoints) = BuildSparklinePoints(prediction);
+    }
+
+    private static string NoDepletionKeyFor(UsageWindow? window)
+    {
+        var id = window?.Id;
+        if (string.IsNullOrEmpty(id))
+        {
+            return AppStringKeys.PredictionNoDepletion;
+        }
+        if (id.Equals("five-hour", StringComparison.OrdinalIgnoreCase)
+            || id.EndsWith("-primary", StringComparison.OrdinalIgnoreCase))
+        {
+            return AppStringKeys.PredictionNoDepletionFiveHour;
+        }
+        if (id.StartsWith("weekly", StringComparison.OrdinalIgnoreCase)
+            || id.EndsWith("-secondary", StringComparison.OrdinalIgnoreCase))
+        {
+            return AppStringKeys.PredictionNoDepletionWeekly;
+        }
+        return AppStringKeys.PredictionNoDepletion;
     }
 
     private static string FormatPredictionDuration(TimeSpan duration, AppLanguage language)
@@ -2109,6 +2131,7 @@ public sealed class UsageWindowItemViewModel : INotifyPropertyChanged
         UrgencyBrush = ProviderUsageItemViewModel.ComputeUrgencyBrush(window.PercentRemaining, usesUsedPercent);
         ProviderUsageItemViewModel.ApplyPrediction(
             prediction,
+            window,
             language,
             out var predictionText,
             out var predictionDetailText,

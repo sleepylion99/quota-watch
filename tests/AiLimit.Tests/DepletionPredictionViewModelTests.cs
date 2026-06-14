@@ -62,7 +62,7 @@ public sealed class DepletionPredictionViewModelTests
 
         var provider = Assert.Single(viewModel.Providers);
         Assert.True(provider.ShowPrediction);
-        Assert.Equal("At current rate, won't hit this window's limit", provider.PredictionText);
+        Assert.Equal("At current rate, won't hit this 5h limit", provider.PredictionText);
         Assert.Empty(provider.PredictionDetailText);
         Assert.Empty(provider.SparklineProjectionPoints);
     }
@@ -147,6 +147,50 @@ public sealed class DepletionPredictionViewModelTests
         var provider = Assert.Single(viewModel.Providers);
         Assert.True(provider.ShowPrediction);
         Assert.Equal("Limit already depleted", provider.PredictionText);
+    }
+
+    [Theory]
+    [InlineData("five-hour", "At current rate, won't hit this 5h limit")]
+    [InlineData("gpt-5-3-codex-spark-primary", "At current rate, won't hit this 5h limit")]
+    [InlineData("weekly", "At current rate, won't hit this week's limit")]
+    [InlineData("weekly-sonnet", "At current rate, won't hit this week's limit")]
+    [InlineData("gpt-5-3-codex-spark-secondary", "At current rate, won't hit this week's limit")]
+    [InlineData("antigravity-gemini-2-5-pro", "At current rate, won't hit this window's limit")]
+    [InlineData("gpt-5-3-codex-spark-credits", "At current rate, won't hit this window's limit")]
+    public void UpdateRoutesNoDepletionTextByWindowId(string windowId, string expectedText)
+    {
+        var prediction = new DepletionPrediction(
+            PredictionState.ResetsFirst,
+            null,
+            null,
+            1,
+            [
+                Sample(Now.AddMinutes(-20), 40),
+                Sample(Now.AddMinutes(-10), 40.5),
+                Sample(Now, 41)
+            ]);
+        var snapshot = new UsageSnapshot(
+            "codex",
+            "Codex",
+            Now,
+            UsageSource.Agent,
+            UsageStatus.Fresh,
+            [new UsageWindow(windowId, "Limit", 50, Now.AddHours(3), null, "high", IsUsedPercent: true)]);
+        var predictions = new Dictionary<UsageWindowKey, DepletionPrediction>
+        {
+            [new("codex", windowId)] = prediction
+        };
+        var viewModel = new UsageViewModel();
+
+        viewModel.Update(
+            [snapshot],
+            false,
+            LimitDisplayMode.Bars,
+            AppLanguage.English,
+            predictions: predictions);
+
+        var provider = Assert.Single(viewModel.Providers);
+        Assert.Equal(expectedText, provider.PredictionText);
     }
 
     private static IReadOnlyDictionary<UsageWindowKey, DepletionPrediction> Predictions(
