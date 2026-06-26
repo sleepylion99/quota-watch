@@ -8,6 +8,7 @@
     <Color x:Key="Color.Surface.CardElevated">#21262D</Color>
     <Color x:Key="Color.Surface.CardInverse">#111827</Color>
     <Color x:Key="Color.Surface.Overlay">#F0080D19</Color>
+    <Color x:Key="Color.Surface.ModalScrim">#99000000</Color>
 
     <!-- Text -->
     <Color x:Key="Color.Text.Primary">#E6EDF3</Color>

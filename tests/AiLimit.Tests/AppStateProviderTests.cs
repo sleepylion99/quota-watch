@@ -46,19 +46,14 @@ public sealed class AppStateProviderTests
     }
 
     [Fact]
-    public void GetActiveProvidersUsesSelectedCodexProfileAuthPath()
+    public void GetActiveProvidersUsesCodexAccountProviderAuthPath()
     {
-        var authPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "codex-work", "auth.json"));
-        var settings = AppSettings.Default with
-        {
-            CodexProfiles =
-            [
-                new CodexProfileSetting("work", "Work", authPath)
-            ],
-            SelectedCodexProfileId = "work"
-        };
+        // After Task 5 the codex tile is routed through GetOrCreateCodexAccountProvider().
+        // Verify the tile's auth path is exactly what the active-profile resolver returns —
+        // independent of which profile happens to be active on the dev machine (hermetic).
+        var expectedAuthPath = AppState.GetOrCreateCodexAccountProvider().ResolveActiveAuthPath();
 
-        var active = AppState.GetActiveProviders(settings);
+        var active = AppState.GetActiveProviders(AppSettings.Default);
 
         var codex = Assert.IsType<CodexUsageProvider>(active.Single(provider => provider.Descriptor.Id == "codex"));
         var client = typeof(CodexUsageProvider)
@@ -66,10 +61,10 @@ public sealed class AppStateProviderTests
             .GetValue(codex);
         var composite = Assert.IsType<CodexCompositeRateLimitClient>(client);
         var wham = Assert.IsType<CodexWhamRateLimitClient>(composite.Clients[0]);
-        var selectedPath = typeof(CodexWhamRateLimitClient)
+        var actualPath = typeof(CodexWhamRateLimitClient)
             .GetField("_authPath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
             .GetValue(wham);
-        Assert.Equal(authPath, selectedPath);
+        Assert.Equal(expectedAuthPath, actualPath);
     }
 
     [Fact]
@@ -80,30 +75,6 @@ public sealed class AppStateProviderTests
         state.SetProviderEnabled("codex", false);
 
         Assert.False(state.CurrentSettings.GetEffectiveProviders().Single(provider => provider.Id == "codex").IsEnabled);
-    }
-
-    [Fact]
-    public void SetSelectedCodexProfileUpdatesCurrentSettings()
-    {
-        var state = new AppState();
-        var profiles = new[]
-        {
-            new CodexProfileSetting(CodexProfileSetting.DefaultId, "Default", CodexProfilePaths.DefaultAuthPath(), true),
-            new CodexProfileSetting("work", "Work", Path.Combine(Path.GetTempPath(), "work", "auth.json"))
-        };
-        typeof(AppState)
-            .GetProperty(nameof(AppState.CurrentSettings))!
-            .SetValue(state, AppSettings.Default with { CodexProfiles = profiles });
-        typeof(AppState)
-            .GetProperty(nameof(AppState.CurrentSnapshots))!
-            .SetValue(state, new[] { Snapshot("codex"), Snapshot("claude") });
-
-        state.SetSelectedCodexProfile("work");
-
-        Assert.Equal("work", state.CurrentSettings.SelectedCodexProfileId);
-        var codex = Assert.Single(state.CurrentSnapshots, snapshot => snapshot.ProviderId == "codex");
-        Assert.Equal(UsageStatus.Refreshing, codex.Status);
-        Assert.Empty(codex.Windows);
     }
 
     [Fact]
@@ -198,6 +169,19 @@ public sealed class AppStateProviderTests
         Assert.Contains("_timer.Tick += async (_, _) => await RefreshNextProviderAsync();", source);
         Assert.Contains("_autoRefresh.SelectNext(providers, DateTimeOffset.Now)", source);
         Assert.Contains("_refreshService.RefreshAsync(provider, _shutdown.Token)", source);
+    }
+
+    [Fact]
+    public void ClaudeAccountProviderUsesRealProfileUsagePoller()
+    {
+        var source = File.ReadAllText(SourceFile("src", "AiLimit.App", "Services", "AppState.cs"));
+        var start = source.IndexOf("internal static ClaudeAccountProvider GetOrCreateClaudeAccountProvider()", StringComparison.Ordinal);
+        var end = source.IndexOf("private static bool IsProcessElevated()", start, StringComparison.Ordinal);
+        var claudeProviderFactory = source[start..end];
+
+        Assert.Contains("new ClaudeProfileUsagePoller(SharedLoginHttpClient)", claudeProviderFactory);
+        Assert.Contains("poll: profileUsagePoller.PollAsync", claudeProviderFactory);
+        Assert.DoesNotContain("AccountSnapshot.Success(Array.Empty<QuotaBucket>()", claudeProviderFactory);
     }
 
     [Fact]

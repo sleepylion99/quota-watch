@@ -16,7 +16,7 @@
 **Quota Watch** is a Windows desktop app that shows the usage limits and quota status of Codex, Claude Code, and Google Antigravity on a single screen. Through the tray icon and dashboard you can quickly check your current usage, reset times, and per-provider login status.
 
 > [!IMPORTANT]
-> The current release channel is `v0.0.2 Public Beta`. The app relies on each provider's local login data and on unofficial/internal quota APIs, so lookups may temporarily fail when a provider changes its API. Auth tokens are read locally only and are never sent to a Quota Watch server.
+> The current release channel is `v0.0.3 Public Beta`. The app relies on each provider's local login data and on unofficial/internal quota APIs, so lookups may temporarily fail when a provider changes its API. Auth tokens are read locally only and are never sent to a Quota Watch server.
 
 ## System requirements
 
@@ -87,6 +87,14 @@ You must be signed in to Antigravity with a Google account. Quota Watch uses the
 To refresh an expired token even when the IDE is closed, save your own OAuth client ID and secret under Settings > Antigravity OAuth. You get these values when you create an OAuth desktop app in the Google Cloud Console. They are not for connecting to the IDE; Quota Watch uses them to refresh — without the IDE — the refresh token that Antigravity created via Google sign-in. The saved values are not stored in plain text; they are encrypted to your current Windows user account with Windows DPAPI. The `ANTIGRAVITY_OAUTH_CLIENT_ID` / `ANTIGRAVITY_OAUTH_CLIENT_SECRET` environment variables also keep working.
 
 If the stored credentials are valid, you do not need to keep Antigravity or the Antigravity IDE running. If cloud limits cannot be read directly, Quota Watch falls back to the local endpoint of a running Antigravity IDE.
+
+## Local Security Notes
+
+Quota Watch does not run a separate server, and provider credentials are read only on this PC. Storage still differs by provider so the app can stay compatible with each provider's own tooling.
+
+- Claude Code profile creation/linking keeps Claude Code's `%USERPROFILE%\.claude*\.credentials.json` format. That file is a plain-text JSON token file for Claude Code compatibility, so keep your Windows user profile and any backup/sync folders trusted.
+- Antigravity OAuth client IDs and secrets saved in Settings are encrypted to the current Windows user account with Windows DPAPI. Values supplied through environment variables are used as-is and are not saved by Quota Watch.
+- The app includes a bundled Google OAuth client value used for Antigravity desktop-token refresh. Desktop OAuth client values are closer to public app identifiers than server-side secrets, but user-saved OAuth client values take priority when present.
 
 ## Troubleshooting
 

@@ -136,13 +136,12 @@ public sealed class DashboardMarkupTests
         Assert.Contains("Click=\"SettingsCloseButton_Click\"", settingsXaml);
         Assert.Contains("Click=\"SettingsApplyButton_Click\"", settingsXaml);
         Assert.Contains("Text=\"{Binding ModelSettingsDetailText}\"", settingsXaml);
-        Assert.Contains("Text=\"{Binding AntigravityOAuthTitleText}\"", settingsXaml);
-        Assert.Contains("x:Name=\"AntigravityOAuthClientIdBox\"", settingsXaml);
-        Assert.Contains("x:Name=\"AntigravityOAuthClientSecretBox\"", settingsXaml);
-        Assert.Contains("Click=\"SaveAntigravityOAuthClientButton_Click\"", settingsXaml);
-        Assert.Contains("Click=\"ClearAntigravityOAuthClientButton_Click\"", settingsXaml);
-        Assert.Contains("Content=\"{Binding AntigravityOAuthGuideButtonText}\"", settingsXaml);
-        Assert.Contains("Click=\"OpenAntigravityOAuthGuideButton_Click\"", settingsXaml);
+        Assert.Contains("Text=\"{Binding SettingsAntigravityMovedToAccountsText}\"", settingsXaml);
+        Assert.Contains("x:Name=\"AntigravityOAuthSettingsCard\"", settingsXaml);
+        Assert.DoesNotContain("x:Name=\"AntigravityOAuthClientIdBox\"", settingsXaml);
+        Assert.DoesNotContain("x:Name=\"AntigravityOAuthClientSecretBox\"", settingsXaml);
+        Assert.DoesNotContain("Click=\"SaveAntigravityOAuthClientButton_Click\"", settingsXaml);
+        Assert.DoesNotContain("Click=\"ClearAntigravityOAuthClientButton_Click\"", settingsXaml);
         Assert.Contains("Text=\"{Binding LanguageSettingsTitleText}\"", settingsXaml);
         Assert.Contains("Text=\"{Binding LanguageSettingsDetailText}\"", settingsXaml);
         Assert.Contains("ItemsSource=\"{Binding LanguageOptions}\"", settingsXaml);
@@ -164,8 +163,8 @@ public sealed class DashboardMarkupTests
         Assert.Contains("_state.PreviewLanguage(language)", settingsCode);
         Assert.Contains("_state.ClearLanguagePreview()", settingsCode);
         Assert.Contains("protected override void OnClosed", settingsCode);
-        Assert.Contains("AntigravityOAuthClientStore.DefaultPath()", settingsCode);
-        Assert.Contains("AntigravityOAuthClientSecretBox.Clear()", settingsCode);
+        Assert.DoesNotContain("AntigravityOAuthClientSecretBox.Clear()", settingsCode);
+        Assert.DoesNotContain("SaveAntigravityOAuthClientButton_Click", settingsCode);
         Assert.DoesNotContain("MessageBox.Show", settingsCode);
         Assert.DoesNotContain("ProviderModeComboBox_SelectionChanged", settingsCode);
 
@@ -413,6 +412,26 @@ public sealed class DashboardMarkupTests
     }
 
     [Fact]
+    public void SettingsPanelShowsUpdateAvailableConfirmationForAutomaticAndManualChecks()
+    {
+        var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml");
+        var code = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml.cs");
+
+        Assert.Contains("x:Name=\"UpdateAvailableOverlay\"", xaml);
+        Assert.Contains("Text=\"{Binding UpdateAvailableTitleText}\"", xaml);
+        Assert.Contains("Text=\"{Binding UpdateAvailableMessageText}\"", xaml);
+        Assert.Contains("Content=\"{Binding UpdateAvailableConfirmButtonText}\"", xaml);
+        Assert.Contains("Content=\"{Binding UpdateAvailableCancelButtonText}\"", xaml);
+        Assert.Contains("Click=\"ConfirmUpdateButton_Click\"", xaml);
+        Assert.Contains("Click=\"CancelUpdateButton_Click\"", xaml);
+        Assert.Contains("UpdateAvailableOverlay.Visibility != Visibility.Collapsed", code);
+        Assert.Contains("result.IsUpdateAvailable", code);
+        Assert.Contains("_pendingUpdateReleaseUrl = result.ReleaseUrl", code);
+        Assert.Contains("new UpdateReleaseLauncher()", code);
+        Assert.DoesNotContain("MessageBox.Show", code);
+    }
+
+    [Fact]
     public void SettingsPanelCanConfigureLimitWarnings()
     {
         var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml");
@@ -471,10 +490,11 @@ public sealed class DashboardMarkupTests
     }
 
     [Fact]
-    public void SettingsPanelShowsAntigravityOAuthActiveClientLine()
+    public void SettingsPanelShowsAntigravityMovedPointer()
     {
         var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml");
-        Assert.Contains("Text=\"{Binding AntigravityOAuthActiveClientText}\"", xaml);
+        Assert.Contains("Text=\"{Binding SettingsAntigravityMovedToAccountsText}\"", xaml);
+        Assert.DoesNotContain("Text=\"{Binding AntigravityOAuthActiveClientText}\"", xaml);
     }
 
     [Fact]
@@ -1105,54 +1125,40 @@ public sealed class DashboardMarkupTests
     }
 
     [Fact]
-    public void DashboardCodexCardHasProfileSelector()
+    public void DashboardHasAccountsButtonWiredToCodexAccountProvider()
     {
+        // After Task 5 the per-tile Codex profile ComboBox is replaced by the shared
+        // Accounts window opened via an AccountsButton in the dashboard toolbar.
         var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml");
         var code = ReadSourceFile("src", "AiLimit.App", "Windows", "DashboardWindow.xaml.cs");
 
-        Assert.Contains("x:Name=\"CodexProfileSelector\"", xaml);
-        Assert.Contains("ItemsSource=\"{Binding CodexProfiles}\"", xaml);
-        Assert.Contains("SelectedValuePath=\"Id\"", xaml);
-        Assert.Contains("SelectionChanged=\"CodexProfileSelector_SelectionChanged\"", xaml);
-        Assert.Contains("_state.SetSelectedCodexProfile(profileId)", code);
+        Assert.Contains("x:Name=\"AccountsButton\"", xaml);
+        Assert.Contains("Click=\"AccountsButton_Click\"", xaml);
+        Assert.Contains("AppState.GetOrCreateCodexAccountProvider()", code);
+        Assert.DoesNotContain("x:Name=\"CodexProfileSelector\"", xaml);
     }
 
     [Fact]
-    public void SettingsWindowOpensSeparateCodexProfilesWindow()
+    public void LegacyCodexProfilesSurfaceIsRemoved()
     {
+        // Regression: the old "Codex profiles" button + window were removed in Task 8.
+        // SettingsWindow must no longer reference ManageCodexProfilesButton_Click or
+        // CodexProfilesWindow, and settings must have no SelectedCodexProfileId plumbing.
         var xaml = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml");
         var code = ReadSourceFile("src", "AiLimit.App", "Windows", "SettingsWindow.xaml.cs");
-        var profilesXaml = ReadSourceFile("src", "AiLimit.App", "Windows", "CodexProfilesWindow.xaml");
-        var profilesCode = ReadSourceFile("src", "AiLimit.App", "Windows", "CodexProfilesWindow.xaml.cs");
+        var settingsCs = ReadSourceFile("src", "AiLimit.Core", "Settings", "AppSettings.cs");
+        var windowsDir = Path.Combine(RepoRoot(), "src", "AiLimit.App", "Windows");
 
-        Assert.Contains("Click=\"ManageCodexProfilesButton_Click\"", xaml);
-        Assert.Contains("BasedOn=\"{StaticResource {x:Type Button}}\"", xaml);
-        Assert.DoesNotContain("x:Name=\"CodexProfilesSettingsCard\"", xaml);
-        Assert.Contains("new CodexProfilesWindow(_state)", code);
-        Assert.Contains("_codexProfilesWindow.Activate()", code);
+        Assert.DoesNotContain("ManageCodexProfilesButton_Click", xaml);
+        Assert.DoesNotContain("CodexProfilesWindow", code);
+        Assert.DoesNotContain("SelectedCodexProfileId", settingsCs);
+        Assert.False(File.Exists(Path.Combine(windowsDir, "CodexProfilesWindow.xaml")),
+            "CodexProfilesWindow.xaml should have been deleted");
+        Assert.False(File.Exists(Path.Combine(windowsDir, "CodexProfilesWindow.xaml.cs")),
+            "CodexProfilesWindow.xaml.cs should have been deleted");
 
-        Assert.Contains("x:Class=\"AiLimit.App.Windows.CodexProfilesWindow\"", profilesXaml);
-        Assert.Contains("WindowStyle=\"None\"", profilesXaml);
-        Assert.Contains("AllowsTransparency=\"True\"", profilesXaml);
-        Assert.Contains("Background=\"Transparent\"", profilesXaml);
-        Assert.Contains("CornerRadius=\"12\"", profilesXaml);
-        Assert.Contains("Background=\"{DynamicResource Brush.Surface.TitleBar}\"", profilesXaml);
-        Assert.Contains("Style=\"{StaticResource WindowMinimizeButtonStyle}\"", profilesXaml);
-        Assert.Contains("Style=\"{StaticResource WindowCloseButtonStyle}\"", profilesXaml);
-        Assert.Contains("MouseLeftButtonDown=\"Header_MouseLeftButtonDown\"", profilesXaml);
-        Assert.Contains("x:Name=\"ProfilesActionFooter\"", profilesXaml);
-        Assert.Contains("Header_MouseLeftButtonDown", profilesCode);
-        Assert.Contains("ProfilesMinimizeButton_Click", profilesCode);
-        Assert.Contains("x:Name=\"CodexProfileNameBox\"", profilesXaml);
-        Assert.Contains("BasedOn=\"{StaticResource {x:Type Button}}\"", profilesXaml);
-        Assert.Contains("x:Name=\"CodexProfilePathBox\"", profilesXaml);
-        Assert.Contains("InitialDirectory = GetCodexProfileBrowseDirectory()", profilesCode);
-        Assert.Contains("FileName = \"auth.json\"", profilesCode);
-        Assert.Contains("Click=\"BrowseCodexProfileButton_Click\"", profilesXaml);
-        Assert.Contains("Click=\"AddCodexProfileButton_Click\"", profilesXaml);
-        Assert.Contains("Click=\"RemoveCodexProfileButton_Click\"", profilesXaml);
-        Assert.Contains("OpenFileDialog", profilesCode);
-        Assert.Contains("CodexProfiles = profiles", profilesCode);
+        // The Accounts button (new path) must still be present.
+        Assert.Contains("OpenAccountsWindowButton_Click", code);
     }
 
     private static string RepoRoot()

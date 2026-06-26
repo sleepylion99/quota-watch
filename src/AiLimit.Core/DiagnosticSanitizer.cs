@@ -18,12 +18,16 @@ public static class DiagnosticSanitizer
     private static readonly Regex BareGoogleTokenPattern = new(
         @"\b(?:ya29\.|1//|GOCSPX-)[A-Za-z0-9._~+/=-]{8,}",
         RegexOptions.CultureInvariant);
+    private static readonly Regex BareGoogleClientIdPattern = new(
+        @"\b[0-9]{6,}-[A-Za-z0-9_-]{10,}\.apps\.googleusercontent\.com\b",
+        RegexOptions.CultureInvariant);
 
     public static string Redact(string content)
     {
         var redacted = BearerTokenPattern.Replace(content, "$1[redacted]");
         redacted = KeyValueSecretPattern.Replace(redacted, "$1$2[redacted]");
         redacted = CsrfArgumentPattern.Replace(redacted, "$1[redacted]");
-        return BareGoogleTokenPattern.Replace(redacted, "[redacted]");
+        redacted = BareGoogleTokenPattern.Replace(redacted, "[redacted]");
+        return BareGoogleClientIdPattern.Replace(redacted, "[redacted]");
     }
 }

@@ -1,5 +1,5 @@
-using System.Security.Cryptography;
 using System.Runtime.Versioning;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,7 +9,13 @@ namespace AiLimit.Core.Providers;
 
 public sealed record AntigravityOAuthClientConfig(string? ClientId, string? ClientSecret);
 
-[SupportedOSPlatform("windows")]
+/// <summary>
+/// Vestige of the retired single-client OAuth store. Antigravity OAuth clients are now
+/// managed by <see cref="AntigravityOAuthClientRegistry"/>; this type survives only to name
+/// the legacy on-disk file the registry migrates from on first run and to decrypt it (the
+/// old format used per-machine DPAPI with a registry-stored entropy blob). Once the one-time
+/// migration is no longer needed, this class and its <see cref="DefaultPath"/> can be removed.
+/// </summary>
 public sealed class AntigravityOAuthClientStore
 {
     private const string RegistryKeyPath = @"Software\AiLimit";
@@ -29,106 +35,28 @@ public sealed class AntigravityOAuthClientStore
             "antigravity-oauth-client.json");
     }
 
-    public AntigravityOAuthClientConfig Load()
+    /// <summary>
+    /// Reads the old entropy-DPAPI format and returns the DECRYPTED plaintext client config,
+    /// or <c>null</c> if the file is absent or cannot be decrypted (wrong user, missing
+    /// registry entropy, or corrupted). Only available on Windows because DPAPI is Windows-only.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public AntigravityOAuthClientConfig? LoadLegacyPlaintext()
     {
         try
         {
-            if (!File.Exists(_path))
-            {
-                return new AntigravityOAuthClientConfig(null, null);
-            }
-
+            if (!File.Exists(_path)) return null;
             var payload = JsonSerializer.Deserialize<StoredClientPayload>(File.ReadAllText(_path));
-            if (payload is null)
-            {
-                return new AntigravityOAuthClientConfig(null, null);
-            }
-
+            if (payload is null) return null;
             var entropy = LoadEntropy();
             return new AntigravityOAuthClientConfig(
                 Unprotect(payload.ClientId, entropy),
                 Unprotect(payload.ClientSecret, entropy));
         }
-        catch
-        {
-            return new AntigravityOAuthClientConfig(null, null);
-        }
+        catch { return null; }
     }
 
-    public void Save(string clientId, string clientSecret)
-    {
-        if (string.IsNullOrWhiteSpace(clientId))
-        {
-            throw new ArgumentException("Client ID is required.", nameof(clientId));
-        }
-
-        if (string.IsNullOrWhiteSpace(clientSecret))
-        {
-            throw new ArgumentException("Client secret is required.", nameof(clientSecret));
-        }
-
-        var directory = Path.GetDirectoryName(_path);
-        if (!string.IsNullOrWhiteSpace(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var entropy = EnsureEntropy();
-        var payload = new StoredClientPayload(
-            Protect(clientId.Trim(), entropy),
-            Protect(clientSecret.Trim(), entropy));
-        var tempPath = $"{_path}.{Guid.NewGuid():N}.tmp";
-        try
-        {
-            File.WriteAllText(
-                tempPath,
-                JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
-            File.Move(tempPath, _path, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(tempPath))
-            {
-                File.Delete(tempPath);
-            }
-        }
-    }
-
-    public void Clear()
-    {
-        try
-        {
-            if (File.Exists(_path))
-            {
-                File.Delete(_path);
-            }
-        }
-        catch
-        {
-            // Clearing credentials is best-effort.
-        }
-    }
-
-    private static byte[] EnsureEntropy()
-    {
-        using var key = Registry.CurrentUser.CreateSubKey(RegistryKeyPath);
-        if (key.GetValue(RegistryValueName) is string existing && !string.IsNullOrWhiteSpace(existing))
-        {
-            try
-            {
-                return Convert.FromBase64String(existing);
-            }
-            catch
-            {
-                // Regenerate if stored value is corrupt.
-            }
-        }
-
-        var entropy = RandomNumberGenerator.GetBytes(32);
-        key.SetValue(RegistryValueName, Convert.ToBase64String(entropy));
-        return entropy;
-    }
-
+    [SupportedOSPlatform("windows")]
     private static byte[]? LoadEntropy()
     {
         using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath);
@@ -147,15 +75,7 @@ public sealed class AntigravityOAuthClientStore
         }
     }
 
-    private static string Protect(string value, byte[]? entropy)
-    {
-        var protectedBytes = ProtectedData.Protect(
-            Encoding.UTF8.GetBytes(value),
-            entropy,
-            DataProtectionScope.CurrentUser);
-        return Convert.ToBase64String(protectedBytes);
-    }
-
+    [SupportedOSPlatform("windows")]
     private static string? Unprotect(string? value, byte[]? entropy)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -163,11 +83,16 @@ public sealed class AntigravityOAuthClientStore
             return null;
         }
 
-        var bytes = ProtectedData.Unprotect(
-            Convert.FromBase64String(value),
-            entropy,
-            DataProtectionScope.CurrentUser);
-        return Encoding.UTF8.GetString(bytes);
+        try
+        {
+            var bytes = ProtectedData.Unprotect(
+                Convert.FromBase64String(value),
+                entropy,
+                DataProtectionScope.CurrentUser);
+            return Encoding.UTF8.GetString(bytes);
+        }
+        catch (FormatException) { return null; }
+        catch (CryptographicException) { return null; }
     }
 
     private sealed record StoredClientPayload(

@@ -268,12 +268,13 @@ public sealed class TrayController : IDisposable
         }
 
         var limitWarningSettings = _state.CurrentSettings.Normalize().LimitWarningSettings;
+        var evaluationSnapshots = _state.WarningEvaluationSnapshots;
         LimitWarningEvaluator.UpdateWarningState(
-            _state.CurrentSnapshots,
+            evaluationSnapshots,
             _warnedLimits,
             limitWarningSettings);
         var warnings = LimitWarningEvaluator.FindWarnings(
-            _state.CurrentSnapshots,
+            evaluationSnapshots,
             _warnedLimits,
             _state.CurrentSettings.WeeklyLimitWarningSuppressions,
             thresholdPercent: _state.CurrentSettings.LimitWarningThresholdPercent,

@@ -132,8 +132,8 @@ public sealed class LimitWarningTests
     {
         var warned = new HashSet<string>(StringComparer.Ordinal)
         {
-            "codex:five-hour",
-            "claude:five-hour"
+            "codex:five-hour:",
+            "claude:five-hour:"
         };
         var settings = new[]
         {
@@ -154,8 +154,8 @@ public sealed class LimitWarningTests
 
         LimitWarningEvaluator.UpdateWarningState(snapshots, warned, settings);
 
-        Assert.DoesNotContain("codex:five-hour", warned);
-        Assert.Contains("claude:five-hour", warned);
+        Assert.DoesNotContain("codex:five-hour:", warned);
+        Assert.Contains("claude:five-hour:", warned);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public sealed class LimitWarningTests
     {
         var seen = new HashSet<string>(StringComparer.Ordinal)
         {
-            "codex:five-hour"
+            "codex:five-hour:"
         };
 
         var warning = LimitWarningEvaluator.FindWarning([
@@ -286,7 +286,7 @@ public sealed class LimitWarningTests
     {
         var seen = new HashSet<string>(StringComparer.Ordinal)
         {
-            "codex:five-hour"
+            "codex:five-hour:"
         };
 
         LimitWarningEvaluator.UpdateWarningState([
@@ -297,6 +297,27 @@ public sealed class LimitWarningTests
         ], seen);
 
         Assert.Empty(seen);
+    }
+
+    [Fact]
+    public void FindWarningsKeepsTwoAccountsOnSameProviderAndWindowDistinct()
+    {
+        var snapshots = new[]
+        {
+            new UsageSnapshot("claude", "Claude Code — a@x.com", DateTimeOffset.Now, UsageSource.Mock,
+                UsageStatus.Fresh,
+                [new UsageWindow("five-hour", "Current session", 95, null, null, "high", IsUsedPercent: true)],
+                AccountKey: "acct-a"),
+            new UsageSnapshot("claude", "Claude Code — b@x.com", DateTimeOffset.Now, UsageSource.Mock,
+                UsageStatus.Fresh,
+                [new UsageWindow("five-hour", "Current session", 96, null, null, "high", IsUsedPercent: true)],
+                AccountKey: "acct-b"),
+        };
+
+        var warnings = LimitWarningEvaluator.FindWarnings(snapshots);
+
+        Assert.Equal(2, warnings.Count);
+        Assert.Equal(2, warnings.Select(w => w.Key).Distinct().Count());
     }
 
     private static UsageSnapshot Snapshot(

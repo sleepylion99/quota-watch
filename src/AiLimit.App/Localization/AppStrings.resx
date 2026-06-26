@@ -90,9 +90,21 @@
   <data name="LimitWarningThresholdText" xml:space="preserve"><value>Alert threshold</value></data>
   <data name="LimitWarningThresholdOption" xml:space="preserve"><value>{0}% left / {1}% used</value></data>
   <data name="LimitWarningCustomThresholdLabel" xml:space="preserve"><value>Custom:</value></data>
+  <data name="SettingsInactiveAccountWarning" xml:space="preserve"><value>Warn for inactive accounts too</value></data>
+  <data name="SettingsInactiveAccountWarningHint" xml:space="preserve"><value>Polls other profiles in the background (every 30 min) so you get depletion warnings without switching accounts.</value></data>
   <data name="UpdateCheckTitleText" xml:space="preserve"><value>Updates</value></data>
   <data name="UpdateCheckDetailText" xml:space="preserve"><value>Check whether a newer release is available.</value></data>
   <data name="CheckForUpdatesButtonText" xml:space="preserve"><value>Check for Updates</value></data>
+  <data name="UpdateAvailableTitleText" xml:space="preserve"><value>Update available</value></data>
+  <data name="UpdateAvailableMessageText" xml:space="preserve"><value>Version {0} is available. Would you like to open the update page?</value></data>
+  <data name="UpdateAvailableConfirmButtonText" xml:space="preserve"><value>Open update page</value></data>
+  <data name="UpdateAvailableCancelButtonText" xml:space="preserve"><value>Cancel</value></data>
+  <data name="UpdateReleaseOpenFailedText" xml:space="preserve"><value>Could not open the update page. Please open GitHub Releases manually.</value></data>
+  <data name="UpdateCheckStatusChecking" xml:space="preserve"><value>Checking for updates...</value></data>
+  <data name="UpdateCheckStatusAvailable" xml:space="preserve"><value>New version {0} available: {1}</value></data>
+  <data name="UpdateCheckStatusUpToDate" xml:space="preserve"><value>You're up to date. Current version {0}</value></data>
+  <data name="UpdateCheckStatusFailed" xml:space="preserve"><value>Update check failed. Please check your network connection.</value></data>
+  <data name="UpdateCheckReleaseNotAccessible" xml:space="preserve"><value>Cannot access GitHub release info. Please check the repository or release visibility.</value></data>
   <data name="DiagnosticLogTitleText" xml:space="preserve"><value>Diagnostic log</value></data>
   <data name="DiagnosticLogDetailText" xml:space="preserve"><value>Found a bug? Copy this log and send it to the developer.</value></data>
   <data name="CopyDiagnosticLogButtonText" xml:space="preserve"><value>Copy Log</value></data>
@@ -137,18 +149,18 @@
   <data name="NoValueBadgeText" xml:space="preserve"><value>No value</value></data>
   <data name="NoValueBadgeToolTipText" xml:space="preserve"><value>No quota value could be displayed. Check the adjacent status badge for the reason.</value></data>
   <data name="SourceBadgeCloud" xml:space="preserve"><value>Cloud</value></data>
-  <data name="SourceBadgeIdeFallback" xml:space="preserve"><value>IDE fallback</value></data>
+  <data name="SourceBadgeIdeFallback" xml:space="preserve"><value>IDE</value></data>
   <data name="SourceBadgeCloudToolTip" xml:space="preserve"><value>Usage data was fetched from Antigravity Cloud.</value></data>
-  <data name="SourceBadgeIdeFallbackToolTip" xml:space="preserve"><value>Cloud was unreachable, so usage data was fetched from the local Antigravity IDE fallback.</value></data>
+  <data name="SourceBadgeIdeFallbackToolTip" xml:space="preserve"><value>Usage data was fetched from the local Antigravity IDE.</value></data>
   <data name="OAuthClientOriginIde" xml:space="preserve"><value>Antigravity IDE credentials</value></data>
   <data name="OAuthClientOriginUserSaved" xml:space="preserve"><value>Your saved values</value></data>
   <data name="OAuthClientOriginEnvironment" xml:space="preserve"><value>Environment variables</value></data>
-  <data name="OAuthClientOriginNone" xml:space="preserve"><value>(none — refresh will fail when expired)</value></data>
+  <data name="OAuthClientOriginNone" xml:space="preserve"><value>(automatically resolved from the Antigravity install when refresh is needed)</value></data>
   <data name="OAuthClientOriginTooltipPrefix" xml:space="preserve"><value>OAuth client used for token refresh</value></data>
   <data name="AntigravityOAuthActiveClientLabel" xml:space="preserve"><value>Currently used for refresh</value></data>
   <data name="AntigravityOAuthActiveClientNone" xml:space="preserve"><value>Token refresh client: not set (uses IDE fallback when running · otherwise refresh fails when expired)</value></data>
   <data name="CloudPrefix" xml:space="preserve"><value>Cloud</value></data>
-  <data name="IdeFallbackPrefix" xml:space="preserve"><value>IDE fallback</value></data>
+  <data name="IdeFallbackPrefix" xml:space="preserve"><value>IDE</value></data>
   <data name="AntigravityCauseHttp401" xml:space="preserve"><value>your sign-in has expired</value></data>
   <data name="AntigravityCauseTimeout" xml:space="preserve"><value>the request did not return in time</value></data>
   <data name="AntigravityCauseNoEndpoint" xml:space="preserve"><value>no running Antigravity IDE was found</value></data>
@@ -191,7 +203,7 @@
   <data name="PercentUsedValue" xml:space="preserve"><value>{0}% used</value></data>
   <data name="PercentLeftValue" xml:space="preserve"><value>{0}% left</value></data>
   <data name="ConfidenceValue" xml:space="preserve"><value>Confidence: {0}</value></data>
-  <data name="SetupHintAntigravity" xml:space="preserve"><value>Automatic: Cloud first, then IDE fallback. Cloud uses stored Antigravity OAuth tokens. Expired tokens need stored OAuth client values or explicit ANTIGRAVITY_OAUTH_CLIENT_ID and ANTIGRAVITY_OAUTH_CLIENT_SECRET to refresh without the IDE.</value></data>
+  <data name="SetupHintAntigravity" xml:space="preserve"><value>Automatic: IDE first, then Cloud. Cloud uses stored Antigravity OAuth tokens. Expired tokens need stored OAuth client values or explicit ANTIGRAVITY_OAUTH_CLIENT_ID and ANTIGRAVITY_OAUTH_CLIENT_SECRET to refresh without the IDE.</value></data>
   <data name="SetupHintClaude" xml:space="preserve"><value>Uses Claude Code OAuth credentials. Sign in with Claude Code once; Claude Code does not need to stay open.</value></data>
   <data name="ModeOptionAuto" xml:space="preserve"><value>Auto</value></data>
   <data name="ModeOptionBasic" xml:space="preserve"><value>Basic</value></data>
@@ -210,4 +222,73 @@
   <data name="PredictionNoDepletionFiveHour" xml:space="preserve"><value>At current rate, won't hit this 5h limit</value></data>
   <data name="PredictionNoDepletionWeekly" xml:space="preserve"><value>At current rate, won't hit this week's limit</value></data>
   <data name="PredictionDepletionAt" xml:space="preserve"><value>Expected around {0:t}</value></data>
+  <data name="AccountsWindowTitle" xml:space="preserve"><value>Accounts</value></data>
+  <data name="AccountsManagerButtonText" xml:space="preserve"><value>Account Manager</value></data>
+  <data name="AccountsTabCodex" xml:space="preserve"><value>Codex</value></data>
+  <data name="AccountsTabClaude" xml:space="preserve"><value>Claude</value></data>
+  <data name="AccountsTabAntigravity" xml:space="preserve"><value>Antigravity</value></data>
+  <data name="AccountsColumnAccount" xml:space="preserve"><value>Account</value></data>
+  <data name="AccountsColumnStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="AccountsColumnPlan" xml:space="preserve"><value>Plan</value></data>
+  <data name="AccountsSyncFromIde" xml:space="preserve"><value>Sync from IDE</value></data>
+  <data name="AccountsSyncFromCli" xml:space="preserve"><value>Sync from CLI</value></data>
+  <data name="AccountsRefreshAll" xml:space="preserve"><value>Refresh All</value></data>
+  <data name="AccountsSwitch" xml:space="preserve"><value>Switch</value></data>
+  <data name="AccountsMoveToTrash" xml:space="preserve"><value>Delete</value></data>
+  <data name="AccountsMovedToTrash" xml:space="preserve"><value>Moved to Trash.</value></data>
+  <data name="AccountsTrash" xml:space="preserve"><value>Trash</value></data>
+  <data name="AccountsTrashBack" xml:space="preserve"><value>Back to accounts</value></data>
+  <data name="AccountsTrashEmpty" xml:space="preserve"><value>Trash is empty.</value></data>
+  <data name="AccountsTrashRestore" xml:space="preserve"><value>Restore</value></data>
+  <data name="AccountsTrashDeletePermanently" xml:space="preserve"><value>Delete permanently</value></data>
+  <data name="AccountsTrashCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="AccountsTrashConfirmTitle" xml:space="preserve"><value>Delete permanently?</value></data>
+  <data name="AccountsTrashConfirmMessage" xml:space="preserve"><value>Delete {0} from {1} permanently? This cannot be undone.</value></data>
+  <data name="AccountsTrashDeletedAt" xml:space="preserve"><value>Deleted {0:g}</value></data>
+  <data name="AccountsActiveBadge" xml:space="preserve"><value>Active</value></data>
+  <data name="AccountsStatusIdle" xml:space="preserve"><value>Idle</value></data>
+  <data name="AccountsStatusError" xml:space="preserve"><value>Error</value></data>
+  <data name="AccountsStatusLoading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="AccountsStatusLowest" xml:space="preserve"><value>{0}% lowest</value></data>
+  <data name="AccountsOAuthClientSectionTitle" xml:space="preserve"><value>OAuth client</value></data>
+  <data name="AccountsOAuthClientActiveLabel" xml:space="preserve"><value>Active client: {0}</value></data>
+  <data name="AccountsOAuthClientAdd" xml:space="preserve"><value>Add client</value></data>
+  <data name="AccountsOAuthClientLabelHint" xml:space="preserve"><value>Label</value></data>
+  <data name="AccountsOAuthClientIdHint" xml:space="preserve"><value>Client ID</value></data>
+  <data name="AccountsOAuthClientSecretHint" xml:space="preserve"><value>Client secret</value></data>
+  <data name="AccountsOAuthClientRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="AccountsOAuthClientBuiltIn" xml:space="preserve"><value>Bundled default</value></data>
+  <data name="AccountsSignInWithGoogle" xml:space="preserve"><value>Sign in with Google</value></data>
+  <data name="AccountsSignInWithClaude" xml:space="preserve"><value>Sign in with Anthropic</value></data>
+  <data name="AccountsSubmitClaudeCode" xml:space="preserve"><value>Submit code</value></data>
+  <data name="ClaudeSignInBrowserApproved" xml:space="preserve"><value>Approve in the browser, then paste the code here.</value></data>
+  <data name="ClaudeSignInBrowserFailed" xml:space="preserve"><value>Could not open the browser. Open this URL manually: {0}</value></data>
+  <data name="ClaudeSignInAdded" xml:space="preserve"><value>Account added: {0}</value></data>
+  <data name="ClaudeSignInCancelled" xml:space="preserve"><value>Cancelled.</value></data>
+  <data name="ClaudeSignInExchangeFailed" xml:space="preserve"><value>Token exchange failed: {0}</value></data>
+  <data name="ClaudeSignInWriteFailed" xml:space="preserve"><value>Save failed: {0}</value></data>
+  <data name="ClaudeSignInFailed" xml:space="preserve"><value>Sign-in failed: {0}</value></data>
+  <data name="ClaudeSignInError" xml:space="preserve"><value>Error: {0}: {1}</value></data>
+  <data name="AccountsLoginAdded" xml:space="preserve"><value>Added {0}.</value></data>
+  <data name="AccountsLoginDuplicate" xml:space="preserve"><value>That account is already added.</value></data>
+  <data name="AccountsLoginNoActiveClient" xml:space="preserve"><value>Add or select an OAuth client first.</value></data>
+  <data name="AccountsLoginCancelled" xml:space="preserve"><value>Sign-in cancelled.</value></data>
+  <data name="AccountsLoginAuthFailed" xml:space="preserve"><value>Sign-in failed: {0}</value></data>
+  <data name="AccountsLoginExchangeFailed" xml:space="preserve"><value>Token exchange failed: {0}</value></data>
+  <data name="AccountsLoginUserInfoFailed" xml:space="preserve"><value>Could not read the account email.</value></data>
+  <data name="SettingsAntigravityMovedToAccounts" xml:space="preserve"><value>Antigravity sign-in and OAuth client are now managed in the Account Manager.</value></data>
+  <data name="AccountsEmpty" xml:space="preserve"><value>No accounts yet. Click "Sync" while signed in to import the current account.</value></data>
+  <data name="AccountsSyncNotYetImplemented" xml:space="preserve"><value>{0} account import is coming in a later release.</value></data>
+  <data name="AccountsSyncFailedNoLocalToken" xml:space="preserve"><value>No local sign-in was detected to import.</value></data>
+  <data name="AccountsPlanFree" xml:space="preserve"><value>Free</value></data>
+  <data name="AccountsPlanPro" xml:space="preserve"><value>Pro</value></data>
+  <data name="AccountsPlanMax" xml:space="preserve"><value>Max</value></data>
+  <data name="AccountsAddProfile" xml:space="preserve"><value>Add profile</value></data>
+  <data name="AccountsCodexNeedsAdmin" xml:space="preserve"><value>Creating a profile needs admin rights. Fully close the app and relaunch it as Administrator, then try again.</value></data>
+  <data name="AccountsCodexProfileCreated" xml:space="preserve"><value>Profile created. Open a NEW terminal (or run '. $PROFILE'), run "{0}" to sign in within 60 seconds, then Refresh. If you do not sign in, the empty profile is removed automatically.</value></data>
+  <data name="AccountsCodexEmpty" xml:space="preserve"><value>No Codex sign-in found. Sign in to Codex (the .codex folder) first.</value></data>
+  <data name="AccountsLocalIdeRow" xml:space="preserve"><value>IDE (local)</value></data>
+  <data name="ResetCreditSummaryImminent" xml:space="preserve"><value>{0} reset credits — some expiring soon</value></data>
+  <data name="ResetCreditSummaryNormal" xml:space="preserve"><value>{0} reset credits available</value></data>
+  <data name="ResetCreditExpiryTooltip" xml:space="preserve"><value>Nearest expiry: {0}</value></data>
 </root>

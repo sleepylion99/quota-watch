@@ -11,6 +11,23 @@ internal static class AntigravityInstallation
             || (OperatingSystem.IsWindows() && HasUninstallRegistryEntry());
     }
 
+    internal static IEnumerable<string> InstallRootCandidates()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (!string.IsNullOrWhiteSpace(localAppData))
+        {
+            yield return Path.Combine(localAppData, "Programs", "Antigravity");
+            yield return Path.Combine(localAppData, "Programs", "Antigravity IDE");
+        }
+
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        if (!string.IsNullOrWhiteSpace(programFiles))
+        {
+            yield return Path.Combine(programFiles, "Antigravity");
+            yield return Path.Combine(programFiles, "Antigravity IDE");
+        }
+    }
+
     private static IEnumerable<string> CandidatePaths()
     {
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);

@@ -101,31 +101,6 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public async Task SaveAsyncRoundTripsCodexProfilesAndSelection()
-    {
-        var directory = CreateTempDirectory();
-        var path = Path.Combine(directory, "settings.json");
-        var authPath = Path.Combine(directory, "work", "auth.json");
-        var store = new SettingsStore(path);
-        var expected = AppSettings.Default with
-        {
-            CodexProfiles =
-            [
-                new CodexProfileSetting("work", "Work", authPath)
-            ],
-            SelectedCodexProfileId = "work"
-        };
-
-        await store.SaveAsync(expected, CancellationToken.None);
-        var actual = await store.LoadAsync(CancellationToken.None);
-
-        Assert.Equal("work", actual.SelectedCodexProfileId);
-        var selected = actual.GetSelectedCodexProfile();
-        Assert.Equal("Work", selected.DisplayName);
-        Assert.Equal(Path.GetFullPath(authPath), selected.AuthPath);
-    }
-
-    [Fact]
     public void PruneExpiredWeeklyLimitWarningSuppressionsKeepsCurrentAndAccountScopedItems()
     {
         var settings = AppSettings.Default with

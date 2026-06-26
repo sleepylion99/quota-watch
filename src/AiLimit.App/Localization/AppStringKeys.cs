@@ -41,6 +41,11 @@ internal static class AppStringKeys
     public const string ResetAt = nameof(ResetAt);
     public const string NotActiveInSession = nameof(NotActiveInSession);
 
+    // Codex reset credits
+    public const string ResetCreditSummaryImminent = nameof(ResetCreditSummaryImminent);
+    public const string ResetCreditSummaryNormal = nameof(ResetCreditSummaryNormal);
+    public const string ResetCreditExpiryTooltip = nameof(ResetCreditExpiryTooltip);
+
     // Guidance panel
     public const string GuidanceRefreshingTitle = nameof(GuidanceRefreshingTitle);
     public const string GuidanceRefreshingDetail = nameof(GuidanceRefreshingDetail);
@@ -112,11 +117,23 @@ internal static class AppStringKeys
     public const string LimitWarningThresholdText = nameof(LimitWarningThresholdText);
     public const string LimitWarningThresholdOption = nameof(LimitWarningThresholdOption);
     public const string LimitWarningCustomThresholdLabel = nameof(LimitWarningCustomThresholdLabel);
+    public const string SettingsInactiveAccountWarning = nameof(SettingsInactiveAccountWarning);
+    public const string SettingsInactiveAccountWarningHint = nameof(SettingsInactiveAccountWarningHint);
 
     // Update check
     public const string UpdateCheckTitleText = nameof(UpdateCheckTitleText);
     public const string UpdateCheckDetailText = nameof(UpdateCheckDetailText);
     public const string CheckForUpdatesButtonText = nameof(CheckForUpdatesButtonText);
+    public const string UpdateAvailableTitleText = nameof(UpdateAvailableTitleText);
+    public const string UpdateAvailableMessageText = nameof(UpdateAvailableMessageText);
+    public const string UpdateAvailableConfirmButtonText = nameof(UpdateAvailableConfirmButtonText);
+    public const string UpdateAvailableCancelButtonText = nameof(UpdateAvailableCancelButtonText);
+    public const string UpdateReleaseOpenFailedText = nameof(UpdateReleaseOpenFailedText);
+    public const string UpdateCheckStatusChecking = nameof(UpdateCheckStatusChecking);
+    public const string UpdateCheckStatusAvailable = nameof(UpdateCheckStatusAvailable);
+    public const string UpdateCheckStatusUpToDate = nameof(UpdateCheckStatusUpToDate);
+    public const string UpdateCheckStatusFailed = nameof(UpdateCheckStatusFailed);
+    public const string UpdateCheckReleaseNotAccessible = nameof(UpdateCheckReleaseNotAccessible);
 
     // Diagnostic log
     public const string DiagnosticLogTitleText = nameof(DiagnosticLogTitleText);
@@ -264,4 +281,75 @@ internal static class AppStringKeys
     public const string LimitWarningDismiss = nameof(LimitWarningDismiss);
     public const string LimitWarningBodyUsedPercent = nameof(LimitWarningBodyUsedPercent);
     public const string LimitWarningBodyRemaining = nameof(LimitWarningBodyRemaining);
+
+    // Accounts window
+    public const string AccountsWindowTitle = nameof(AccountsWindowTitle);
+    public const string AccountsManagerButtonText = nameof(AccountsManagerButtonText);
+    public const string AccountsTabCodex = nameof(AccountsTabCodex);
+    public const string AccountsTabClaude = nameof(AccountsTabClaude);
+    public const string AccountsTabAntigravity = nameof(AccountsTabAntigravity);
+    public const string AccountsColumnAccount = nameof(AccountsColumnAccount);
+    public const string AccountsColumnStatus = nameof(AccountsColumnStatus);
+    public const string AccountsColumnPlan = nameof(AccountsColumnPlan);
+    public const string AccountsSyncFromIde = nameof(AccountsSyncFromIde);
+    public const string AccountsSyncFromCli = nameof(AccountsSyncFromCli);
+    public const string AccountsRefreshAll = nameof(AccountsRefreshAll);
+    public const string AccountsSwitch = nameof(AccountsSwitch);
+    public const string AccountsMoveToTrash = nameof(AccountsMoveToTrash);
+    public const string AccountsMovedToTrash = nameof(AccountsMovedToTrash);
+    public const string AccountsTrash = nameof(AccountsTrash);
+    public const string AccountsTrashBack = nameof(AccountsTrashBack);
+    public const string AccountsTrashEmpty = nameof(AccountsTrashEmpty);
+    public const string AccountsTrashRestore = nameof(AccountsTrashRestore);
+    public const string AccountsTrashDeletePermanently = nameof(AccountsTrashDeletePermanently);
+    public const string AccountsTrashCancel = nameof(AccountsTrashCancel);
+    public const string AccountsTrashConfirmTitle = nameof(AccountsTrashConfirmTitle);
+    public const string AccountsTrashConfirmMessage = nameof(AccountsTrashConfirmMessage);
+    public const string AccountsTrashDeletedAt = nameof(AccountsTrashDeletedAt);
+    public const string AccountsActiveBadge = nameof(AccountsActiveBadge);
+    public const string AccountsStatusIdle = nameof(AccountsStatusIdle);
+    public const string AccountsStatusError = nameof(AccountsStatusError);
+    public const string AccountsStatusLoading = nameof(AccountsStatusLoading);
+    public const string AccountsStatusLowest = nameof(AccountsStatusLowest);
+    public const string AccountsOAuthClientSectionTitle = nameof(AccountsOAuthClientSectionTitle);
+    public const string AccountsOAuthClientActiveLabel = nameof(AccountsOAuthClientActiveLabel);
+    public const string AccountsOAuthClientAdd = nameof(AccountsOAuthClientAdd);
+    public const string AccountsOAuthClientLabelHint = nameof(AccountsOAuthClientLabelHint);
+    public const string AccountsOAuthClientIdHint = nameof(AccountsOAuthClientIdHint);
+    public const string AccountsOAuthClientSecretHint = nameof(AccountsOAuthClientSecretHint);
+    public const string AccountsOAuthClientRemove = nameof(AccountsOAuthClientRemove);
+    public const string AccountsOAuthClientBuiltIn = nameof(AccountsOAuthClientBuiltIn);
+    public const string AccountsSignInWithGoogle = nameof(AccountsSignInWithGoogle);
+    public const string AccountsSignInWithClaude = nameof(AccountsSignInWithClaude);
+    public const string AccountsSubmitClaudeCode = nameof(AccountsSubmitClaudeCode);
+    public const string ClaudeSignInBrowserApproved = nameof(ClaudeSignInBrowserApproved);
+    public const string ClaudeSignInBrowserFailed = nameof(ClaudeSignInBrowserFailed);
+    public const string ClaudeSignInAdded = nameof(ClaudeSignInAdded);
+    public const string ClaudeSignInCancelled = nameof(ClaudeSignInCancelled);
+    public const string ClaudeSignInExchangeFailed = nameof(ClaudeSignInExchangeFailed);
+    public const string ClaudeSignInWriteFailed = nameof(ClaudeSignInWriteFailed);
+    public const string ClaudeSignInFailed = nameof(ClaudeSignInFailed);
+    public const string ClaudeSignInError = nameof(ClaudeSignInError);
+    public const string AccountsLoginAdded = nameof(AccountsLoginAdded);
+    public const string AccountsLoginDuplicate = nameof(AccountsLoginDuplicate);
+    public const string AccountsLoginNoActiveClient = nameof(AccountsLoginNoActiveClient);
+    public const string AccountsLoginCancelled = nameof(AccountsLoginCancelled);
+    public const string AccountsLoginAuthFailed = nameof(AccountsLoginAuthFailed);
+    public const string AccountsLoginExchangeFailed = nameof(AccountsLoginExchangeFailed);
+    public const string AccountsLoginUserInfoFailed = nameof(AccountsLoginUserInfoFailed);
+    public const string SettingsAntigravityMovedToAccounts = nameof(SettingsAntigravityMovedToAccounts);
+    public const string AccountsEmpty = nameof(AccountsEmpty);
+    public const string AccountsSyncNotYetImplemented = nameof(AccountsSyncNotYetImplemented);
+    public const string AccountsSyncFailedNoLocalToken = nameof(AccountsSyncFailedNoLocalToken);
+    public const string AccountsPlanFree = nameof(AccountsPlanFree);
+    public const string AccountsPlanPro = nameof(AccountsPlanPro);
+    public const string AccountsPlanMax = nameof(AccountsPlanMax);
+
+    public const string AccountsLocalIdeRow = nameof(AccountsLocalIdeRow);
+
+    // Codex profile creation (Task 9 will overwrite translations)
+    public const string AccountsAddProfile = nameof(AccountsAddProfile);
+    public const string AccountsCodexNeedsAdmin = nameof(AccountsCodexNeedsAdmin);
+    public const string AccountsCodexProfileCreated = nameof(AccountsCodexProfileCreated);
+    public const string AccountsCodexEmpty = nameof(AccountsCodexEmpty);
 }

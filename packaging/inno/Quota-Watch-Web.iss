@@ -1,7 +1,7 @@
 #define AppName "Quota Watch"
 #define AppPublisher "sleepylion99"
 #ifndef AppVersion
-#define AppVersion "0.0.2"
+#define AppVersion "0.0.3"
 #endif
 #ifndef SourceDir
 #define SourceDir "..\..\artifacts\publish\win-x64-framework-dependent"

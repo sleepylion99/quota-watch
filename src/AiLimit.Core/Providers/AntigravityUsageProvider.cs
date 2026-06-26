@@ -34,6 +34,7 @@ public sealed class AntigravityUsageProvider : IUsageProvider
         AntigravityOAuthClientOrigin.Environment => "environment",
         AntigravityOAuthClientOrigin.IdeCredentialFile => "ide",
         AntigravityOAuthClientOrigin.UserSavedSettings => "user-saved",
+        AntigravityOAuthClientOrigin.BundledDefault => "bundled",
         _ => "none"
     };
 
@@ -42,13 +43,32 @@ public sealed class AntigravityUsageProvider : IUsageProvider
     public static AntigravityOAuthClientOrigin GetActiveOAuthClientOrigin()
         => AntigravityOAuthCredentialStore.ResolveActiveOAuthClientOrigin();
 
+    /// <summary>
+    /// Builds an <see cref="AntigravityUsageProvider"/> whose underlying OAuth
+    /// client consults <paramref name="credentialResolver"/> for credentials
+    /// each refresh. Used by the dashboard composition root so the tile honours
+    /// the user's selected account from the Accounts window; the resolver falls
+    /// back to the live keychain when no account is explicitly selected.
+    /// </summary>
+    internal static AntigravityUsageProvider CreateWithCredentialResolver(
+        Func<AntigravityOAuthCredentials?> credentialResolver,
+        HttpClient httpClient,
+        Func<bool> allowLocalDetectionResolver)
+    {
+        var client = new AntigravityOAuthUsageClient(
+            httpClient,
+            allowLocalDetectionResolver,
+            credentialLoader: credentialResolver);
+        return new AntigravityUsageProvider(client);
+    }
+
     public async Task<UsageSnapshot> RefreshAsync(CancellationToken cancellationToken)
     {
         try
         {
             var usage = await _client.ReadUsageAsync(cancellationToken).ConfigureAwait(false);
 
-            var windows = BuildWindows(usage.Buckets).ToList();
+            var windows = BuildWindows(usage.Buckets, usage.Channel).ToList();
             if (windows.Count == 0)
             {
                 return Failed(usage.Message ?? "Google Antigravity quota API returned no quota buckets.");
@@ -73,31 +93,56 @@ public sealed class AntigravityUsageProvider : IUsageProvider
         }
     }
 
-    private static IEnumerable<UsageWindow> BuildWindows(IReadOnlyList<AntigravityQuotaBucket> buckets)
+    private static IEnumerable<UsageWindow> BuildWindows(IReadOnlyList<AntigravityQuotaBucket> buckets, string? channel)
     {
-        var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var bucket in buckets
-            .Where(bucket => AntigravityQuotaParser.IsTrackedModel(bucket.ModelId))
-            .OrderBy(bucket => AntigravityModelSortKey(bucket.ModelId), StringComparer.OrdinalIgnoreCase))
-        {
-            var label = string.IsNullOrWhiteSpace(bucket.ModelId) ? "Unknown model" : bucket.ModelId.Trim();
-            var baseId = $"antigravity-{Slugify(label)}";
-            var id = baseId;
-            var suffix = 2;
-            while (!seenIds.Add(id))
-            {
-                id = $"{baseId}-{suffix++}";
-            }
+        var tracked = buckets.Where(bucket => AntigravityQuotaParser.IsTrackedModel(bucket.ModelId));
 
-            yield return new UsageWindow(
-                id,
-                label,
-                100 - bucket.PercentRemaining,
-                bucket.ResetAt,
-                null,
-                "medium",
-                IsUsedPercent: true);
+        // Both the cloud fetchAvailableModels response and the IDE fallback can list base models the
+        // Antigravity model picker does not expose (e.g. "Gemini 3 Flash", "Gemini 3.1 Flash Lite",
+        // "Gemini 2.5 Pro"). The picker only surfaces models that carry a reasoning-effort or thinking
+        // variant (Medium/High/Low/Thinking), so on a known data source keep only those to match the
+        // set the user actually uses. Synthetic reads with no channel are left unfiltered.
+        if (channel is "cloud" or "ide-fallback")
+        {
+            tracked = tracked.Where(bucket => HasReasoningVariant(NormalizeModelLabel(bucket.ModelId)));
         }
+
+        // The cloud response can list several model-map keys that resolve to the same display label
+        // (e.g. four "Gemini 3.1 Flash Lite", two "Gemini 3.1 Pro (High)"). Collapse buckets that
+        // share a label into a single window, keeping the most-used reading, so identical rows don't
+        // appear. Distinct labels — including tier variants such as Medium/High/Low — slugify
+        // differently and are preserved.
+        return tracked
+            .GroupBy(bucket => Slugify(NormalizeModelLabel(bucket.ModelId)))
+            .Select(group => group.OrderBy(bucket => bucket.PercentRemaining).First())
+            .OrderBy(bucket => AntigravityModelSortKey(bucket.ModelId), StringComparer.OrdinalIgnoreCase)
+            .Select(bucket =>
+            {
+                var label = NormalizeModelLabel(bucket.ModelId);
+                return new UsageWindow(
+                    $"antigravity-{Slugify(label)}",
+                    label,
+                    100 - bucket.PercentRemaining,
+                    bucket.ResetAt,
+                    null,
+                    "high",
+                    IsUsedPercent: true);
+            });
+    }
+
+    private static string NormalizeModelLabel(string? modelId)
+        => string.IsNullOrWhiteSpace(modelId) ? "Unknown model" : modelId.Trim();
+
+    private static bool HasReasoningVariant(string label)
+    {
+        // A reasoning-effort tier (Medium/High/Low) or a Thinking marker — present in both the cloud
+        // display name ("Gemini 3.5 Flash (Medium)") and the bare model id ("gemini-3.5-flash-medium").
+        // Mirrors the tier detection in AntigravityModelSortKey.
+        var normalized = label.ToLowerInvariant();
+        return normalized.Contains("medium")
+            || normalized.Contains("high")
+            || normalized.Contains("low")
+            || normalized.Contains("thinking");
     }
 
     private static string AntigravityModelSortKey(string label)
@@ -178,15 +223,14 @@ public sealed class AntigravityUsageProvider : IUsageProvider
             return false;
         }
 
-        var savedClient = new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath()).Load();
-        if (!string.IsNullOrWhiteSpace(savedClient.ClientId)
-            && !string.IsNullOrWhiteSpace(savedClient.ClientSecret))
+        var activeClient = AntigravityOAuthCredentialStore.ResolveActiveOAuthClientConfig();
+        if (!string.IsNullOrWhiteSpace(activeClient.ClientId)
+            && !string.IsNullOrWhiteSpace(activeClient.ClientSecret))
         {
             return true;
         }
 
-        var credentials = new AntigravityOAuthCredentialStore(
-            AntigravityOAuthCredentialStore.DefaultCredentialsPath()).Load();
+        var credentials = AntigravityOAuthCredentialStore.Load();
         return credentials is not null
             && !string.IsNullOrWhiteSpace(AntigravityOAuthCredentialStore.ResolveOAuthClientId(credentials))
             && !string.IsNullOrWhiteSpace(AntigravityOAuthCredentialStore.TryResolveOAuthClientSecret(credentials));
@@ -201,7 +245,6 @@ internal interface IAntigravityUsageClient
 
 internal sealed class AntigravityOAuthUsageClient : IAntigravityUsageClient
 {
-    private const string TokenEndpoint = "https://oauth2.googleapis.com/token";
     private static readonly Uri[] QuotaApiEndpoints =
     [
         new("https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal:fetchAvailableModels"),
@@ -215,8 +258,12 @@ internal sealed class AntigravityOAuthUsageClient : IAntigravityUsageClient
         "{\"metadata\":{\"ideType\":\"ANTIGRAVITY\"}}";
     internal const string CloudUserAgent = "antigravity/windows/amd64";
     private readonly HttpClient _httpClient;
-    private readonly AntigravityOAuthCredentialStore _credentialStore;
-    private readonly bool _allowLocalDetection;
+    private readonly Func<bool> _allowLocalDetectionResolver;
+    private readonly Func<AntigravityOAuthCredentials?> _credentialLoader;
+    // Single nullable tuple so reader and writer observe a consistent
+    // (token, expiry) snapshot. Two independent fields permitted a torn
+    // read where a fresh token could pair with a stale/null expiry.
+    private (string Token, DateTimeOffset ExpiresAt)? _cachedAccessToken;
 
     public AntigravityOAuthUsageClient()
         : this(
@@ -224,39 +271,43 @@ internal sealed class AntigravityOAuthUsageClient : IAntigravityUsageClient
             {
                 Timeout = TimeSpan.FromSeconds(15)
             },
-            AntigravityOAuthCredentialStore.DefaultCredentialsPath(),
             allowLocalDetection: true)
     {
     }
 
     internal AntigravityOAuthUsageClient(HttpClient httpClient)
-        : this(httpClient, AntigravityOAuthCredentialStore.DefaultCredentialsPath(), allowLocalDetection: true)
+        : this(httpClient, allowLocalDetection: true)
     {
     }
 
-    internal AntigravityOAuthUsageClient(HttpClient httpClient, string credentialsPath)
-        : this(httpClient, credentialsPath, allowLocalDetection: false)
+    internal AntigravityOAuthUsageClient(HttpClient httpClient, Func<AntigravityOAuthCredentials?> credentialLoader)
+        : this(httpClient, allowLocalDetection: true, credentialLoader: credentialLoader)
     {
     }
 
-    private AntigravityOAuthUsageClient(HttpClient httpClient, string credentialsPath, bool allowLocalDetection)
+    internal AntigravityOAuthUsageClient(HttpClient httpClient, bool allowLocalDetection, Func<AntigravityOAuthCredentials?>? credentialLoader = null)
+        : this(httpClient, () => allowLocalDetection, credentialLoader)
+    {
+    }
+
+    internal AntigravityOAuthUsageClient(
+        HttpClient httpClient,
+        Func<bool> allowLocalDetectionResolver,
+        Func<AntigravityOAuthCredentials?>? credentialLoader = null)
     {
         _httpClient = httpClient;
-        _credentialStore = new AntigravityOAuthCredentialStore(credentialsPath);
-        _allowLocalDetection = allowLocalDetection;
+        _allowLocalDetectionResolver = allowLocalDetectionResolver
+            ?? throw new ArgumentNullException(nameof(allowLocalDetectionResolver));
+        _credentialLoader = credentialLoader ?? AntigravityOAuthCredentialStore.Load;
     }
 
     public async Task<AntigravityUsageReadResult> ReadUsageAsync(CancellationToken cancellationToken)
     {
         Exception? cloudFailure = null;
         string? ideFallbackDetail = null;
-        var cloudUsage = await TryReadCloudUsageAsync(cancellationToken).ConfigureAwait(false);
-        if (cloudUsage.Buckets.Count > 0)
-        {
-            return cloudUsage;
-        }
+        var allowLocalDetection = _allowLocalDetectionResolver();
 
-        if (_allowLocalDetection)
+        if (allowLocalDetection)
         {
             var localUsage = await TryReadIdeUsageAsync(cancellationToken).ConfigureAwait(false);
             if (localUsage.Buckets.Count > 0)
@@ -265,15 +316,21 @@ internal sealed class AntigravityOAuthUsageClient : IAntigravityUsageClient
                     localUsage.Buckets,
                     localUsage.AccountKey,
                     channel: "ide-fallback",
-                    cloudFailure: SummarizeCloudFailure(cloudFailure));
+                    cloudFailure: null);
             }
 
             ideFallbackDetail = localUsage.Message;
         }
 
+        var cloudUsage = await TryReadCloudUsageAsync(cancellationToken).ConfigureAwait(false);
+        if (cloudUsage.Buckets.Count > 0)
+        {
+            return cloudUsage;
+        }
+
         var cloudSummary = SummarizeCloudFailure(cloudFailure) ?? "unavailable";
 
-        if (_allowLocalDetection && !AntigravityInstallation.IsProbablyInstalled())
+        if (allowLocalDetection && !AntigravityInstallation.IsProbablyInstalled())
         {
             throw new InvalidOperationException(
                 "Antigravity installation was not found. Install Antigravity, then sign in with your Google account."
@@ -437,11 +494,10 @@ internal sealed class AntigravityOAuthUsageClient : IAntigravityUsageClient
 
     internal static string? ResolveAccessToken()
     {
-        return new AntigravityOAuthCredentialStore(AntigravityOAuthCredentialStore.DefaultCredentialsPath())
-            .ResolveAccessToken();
+        return AntigravityOAuthCredentialStore.ResolveAccessToken();
     }
 
-    private async Task<string?> ResolveAccessTokenAsync(CancellationToken cancellationToken)
+    internal async Task<string?> ResolveAccessTokenAsync(CancellationToken cancellationToken)
     {
         var envToken = AntigravityOAuthCredentialStore.ResolveEnvironmentAccessToken();
         if (!string.IsNullOrWhiteSpace(envToken))
@@ -449,14 +505,33 @@ internal sealed class AntigravityOAuthUsageClient : IAntigravityUsageClient
             return envToken;
         }
 
-        var credentials = _credentialStore.Load();
+        if (_cachedAccessToken is { Token: var token, ExpiresAt: var expiry }
+            && expiry > DateTimeOffset.UtcNow.AddMinutes(1))
+        {
+            return token;
+        }
+
+        var credentials = _credentialLoader();
         if (credentials is null)
         {
             return null;
         }
 
+        // Keychain rotation: if Antigravity wrote a different access token after
+        // our last refresh (e.g. the user re-authenticated), drop the cache so we
+        // surface the keychain's value instead of a stale refreshed token.
+        // This is partial invalidation by design — the cache fast-path above will
+        // still return the stale token until its recorded expiry passes. Polling
+        // the keychain on every cache hit would negate the cache; this branch
+        // catches rotation on the next post-expiry refresh.
+        if (_cachedAccessToken is { Token: var cachedToken }
+            && !string.Equals(cachedToken, credentials.AccessToken, StringComparison.Ordinal))
+        {
+            _cachedAccessToken = null;
+        }
+
         return credentials.ShouldRefresh(DateTimeOffset.UtcNow)
-            ? await RefreshAccessTokenAsync(cancellationToken).ConfigureAwait(false)
+            ? await RefreshAccessTokenAsync(credentials, cancellationToken).ConfigureAwait(false)
             : credentials.AccessToken;
     }
 
@@ -629,62 +704,65 @@ internal sealed class AntigravityOAuthUsageClient : IAntigravityUsageClient
         return await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<string> RefreshAccessTokenAsync(CancellationToken cancellationToken)
+    private Task<string> RefreshAccessTokenAsync(CancellationToken cancellationToken)
     {
-        var credentials = _credentialStore.Load()
+        var credentials = AntigravityOAuthCredentialStore.Load()
             ?? throw new InvalidOperationException("Google Antigravity OAuth credentials were not found. Run Antigravity login first.");
+        return RefreshAccessTokenAsync(credentials, cancellationToken);
+    }
+
+    private async Task<string> RefreshAccessTokenAsync(AntigravityOAuthCredentials credentials, CancellationToken cancellationToken)
+    {
         if (string.IsNullOrWhiteSpace(credentials.RefreshToken))
         {
             throw new InvalidOperationException("Google Antigravity refresh token was not found. Run Antigravity login again.");
         }
 
-        var clientSecret = AntigravityOAuthCredentialStore.TryResolveOAuthClientSecret(credentials);
-        var clientId = AntigravityOAuthCredentialStore.ResolveOAuthClientId(credentials)
-            ?? throw new InvalidOperationException(
+        // Honour client values supplied directly on the credentials record (the
+        // account-switcher path threads its own resolver through here). Fall
+        // back to the shared env→user-saved→bundle resolver only when the
+        // caller did not pre-populate them.
+        var clientId = !string.IsNullOrWhiteSpace(credentials.ClientId)
+            ? credentials.ClientId
+            : AntigravityOAuthCredentialStore.ResolveOAuthClientId(credentials);
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            throw new InvalidOperationException(
                 "Google Antigravity OAuth client ID was not found. Save your own OAuth client values in Settings > Antigravity OAuth or set ANTIGRAVITY_OAUTH_CLIENT_ID explicitly.");
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, TokenEndpoint);
-        var form = new Dictionary<string, string>
-        {
-            ["refresh_token"] = credentials.RefreshToken,
-            ["client_id"] = clientId,
-            ["grant_type"] = "refresh_token"
-        };
-        if (!string.IsNullOrWhiteSpace(clientSecret))
-        {
-            form["client_secret"] = clientSecret;
         }
 
-        request.Content = new FormUrlEncodedContent(form);
+        var clientSecret = !string.IsNullOrWhiteSpace(credentials.ClientSecret)
+            ? credentials.ClientSecret
+            : AntigravityOAuthCredentialStore.TryResolveOAuthClientSecret(credentials);
 
-        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        var clientConfig = new AntigravityOAuthClientConfig(clientId, clientSecret);
+        var (result, failureStatusCode) = await AntigravityOAuthCredentialStore.RefreshAccessTokenAsync(
+            credentials.RefreshToken!,
+            clientConfig,
+            _httpClient,
+            captureFailureStatus: true,
+            cancellationToken).ConfigureAwait(false);
+
+        if (result is null)
         {
-            if (string.IsNullOrWhiteSpace(clientSecret)
-                && response.StatusCode == HttpStatusCode.BadRequest)
+            if (failureStatusCode is { } status)
             {
-                throw new InvalidOperationException(
-                    "Google Antigravity token refresh failed because no OAuth client secret is available. " +
-                    "Save your own OAuth client values in Settings > Antigravity OAuth or set ANTIGRAVITY_OAUTH_CLIENT_ID and ANTIGRAVITY_OAUTH_CLIENT_SECRET to refresh expired tokens without the IDE.");
+                if (string.IsNullOrWhiteSpace(clientSecret) && status == HttpStatusCode.BadRequest)
+                {
+                    throw new InvalidOperationException(
+                        "Google Antigravity token refresh failed because no OAuth client secret is available. " +
+                        "Save your own OAuth client values in Settings > Antigravity OAuth or set ANTIGRAVITY_OAUTH_CLIENT_ID and ANTIGRAVITY_OAUTH_CLIENT_SECRET to refresh expired tokens without the IDE.");
+                }
+
+                throw new InvalidOperationException($"Google Antigravity token refresh failed: HTTP {(int)status}.");
             }
 
-            throw new InvalidOperationException($"Google Antigravity token refresh failed: HTTP {(int)response.StatusCode}.");
-        }
-
-        using var document = JsonDocument.Parse(body);
-        var accessToken = document.RootElement.GetProperty("access_token").GetString();
-        if (string.IsNullOrWhiteSpace(accessToken))
-        {
             throw new InvalidOperationException("Google Antigravity token refresh response was missing an access token.");
         }
 
-        var expiresIn = document.RootElement.TryGetProperty("expires_in", out var expiresInElement)
-            && expiresInElement.TryGetInt64(out var seconds)
-            ? seconds
-            : 3600;
-        _credentialStore.SaveRefreshedAccessToken(accessToken, DateTimeOffset.UtcNow.AddSeconds(expiresIn));
-        return accessToken;
+        var refreshed = result.Value;
+        _cachedAccessToken = (refreshed.AccessToken, DateTimeOffset.UtcNow.AddSeconds(refreshed.ExpiresInSeconds));
+        return refreshed.AccessToken;
     }
 
 }

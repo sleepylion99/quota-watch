@@ -8,6 +8,7 @@
     <SolidColorBrush x:Key="Brush.Surface.CardElevated" Color="{DynamicResource Color.Surface.CardElevated}" />
     <SolidColorBrush x:Key="Brush.Surface.CardInverse"  Color="{DynamicResource Color.Surface.CardInverse}" />
     <SolidColorBrush x:Key="Brush.Surface.Overlay"      Color="{DynamicResource Color.Surface.Overlay}" />
+    <SolidColorBrush x:Key="Brush.Surface.ModalScrim"   Color="{DynamicResource Color.Surface.ModalScrim}" />
 
     <!-- Text -->
     <SolidColorBrush x:Key="Brush.Text.Primary"   Color="{DynamicResource Color.Text.Primary}" />

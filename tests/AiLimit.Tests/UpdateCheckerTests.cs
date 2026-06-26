@@ -57,7 +57,7 @@ public sealed class UpdateCheckerTests
         var exception = await Assert.ThrowsAsync<UpdateCheckException>(
             () => checker.CheckAsync(CancellationToken.None));
 
-        Assert.Contains("GitHub 릴리즈 정보를 볼 수 없습니다.", exception.UserMessage);
+        Assert.Contains("Cannot access GitHub release info.", exception.UserMessage);
     }
 
     private sealed class StaticJsonHandler(string json) : HttpMessageHandler

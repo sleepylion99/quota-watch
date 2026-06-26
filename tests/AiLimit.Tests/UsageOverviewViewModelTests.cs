@@ -1,3 +1,4 @@
+using AiLimit.App.Localization;
 using AiLimit.App.ViewModels;
 using AiLimit.App.Services;
 using AiLimit.App.Theming;
@@ -9,6 +10,30 @@ namespace AiLimit.Tests;
 
 public sealed class UsageOverviewViewModelTests
 {
+    [Theory]
+    [InlineData(AppLanguage.English, "Update available", "Version 0.1.5", "Open update page", "Cancel")]
+    [InlineData(AppLanguage.Korean, "새 버전 발견", "버전 0.1.5", "업데이트 페이지 열기", "취소")]
+    [InlineData(AppLanguage.Japanese, "新しいバージョン", "バージョン 0.1.5", "更新ページを開く", "キャンセル")]
+    [InlineData(AppLanguage.Chinese, "发现新版本", "版本 0.1.5", "打开更新页面", "取消")]
+    public void UpdateAvailablePromptUsesSelectedLanguage(
+        AppLanguage language,
+        string expectedTitle,
+        string expectedMessagePart,
+        string expectedConfirm,
+        string expectedCancel)
+    {
+        var viewModel = new UsageViewModel();
+        viewModel.Update([], isRefreshing: false, LimitDisplayMode.Bars, language);
+
+        viewModel.SetUpdateAvailablePrompt("0.1.5");
+
+        Assert.Equal(expectedTitle, viewModel.UpdateAvailableTitleText);
+        Assert.Contains(expectedMessagePart, viewModel.UpdateAvailableMessageText);
+        Assert.Equal(expectedConfirm, viewModel.UpdateAvailableConfirmButtonText);
+        Assert.Equal(expectedCancel, viewModel.UpdateAvailableCancelButtonText);
+        Assert.False(string.IsNullOrWhiteSpace(viewModel.UpdateReleaseOpenFailedText));
+    }
+
     [Theory]
     [InlineData(100, false, BrushKey.UrgencyLow)]
     [InlineData(49, false, BrushKey.UrgencyMedium)]
@@ -636,7 +661,7 @@ public sealed class UsageOverviewViewModelTests
 
         var antigravity = viewModel.ProviderSettings.Single(row => row.Id == "gemini-pro");
         Assert.True(antigravity.HasSetupHint);
-        Assert.Contains("Automatic: Cloud first, then IDE fallback.", antigravity.SetupHintText);
+        Assert.Contains("Automatic: IDE first, then Cloud.", antigravity.SetupHintText);
         Assert.Contains("Cloud uses stored Antigravity OAuth tokens.", antigravity.SetupHintText);
         Assert.Contains("stored OAuth client values", antigravity.SetupHintText);
         Assert.Contains("ANTIGRAVITY_OAUTH_CLIENT_ID", antigravity.SetupHintText);
@@ -827,9 +852,9 @@ public sealed class UsageOverviewViewModelTests
         viewModel.Update([], false, LimitDisplayMode.BothText, AppLanguage.Korean, providers);
 
         var antigravity = viewModel.ProviderSettings.Single(row => row.Id == "gemini-pro");
-        Assert.Contains("클라우드를 먼저", antigravity.SetupHintText);
+        Assert.Contains("IDE를 먼저", antigravity.SetupHintText);
         Assert.DoesNotContain("Automatic:", antigravity.SetupHintText);
-        Assert.DoesNotContain("Cloud first", antigravity.SetupHintText);
+        Assert.DoesNotContain("IDE first", antigravity.SetupHintText);
     }
 
     [Fact]
@@ -1172,7 +1197,7 @@ public sealed class UsageOverviewViewModelTests
     [InlineData(AppLanguage.Korean, "ide", "Antigravity IDE 자격증명")]
     [InlineData(AppLanguage.Korean, "user-saved", "본인이 저장한 값")]
     [InlineData(AppLanguage.Korean, "environment", "환경변수")]
-    [InlineData(AppLanguage.Korean, "none", "(없음 — 만료 시 갱신 실패)")]
+    [InlineData(AppLanguage.Korean, "none", "(필요 시 Antigravity 설치 파일에서 자동으로 가져옵니다)")]
     [InlineData(AppLanguage.English, "ide", "Antigravity IDE credentials")]
     [InlineData(AppLanguage.Japanese, "ide", "Antigravity IDE の資格情報")]
     [InlineData(AppLanguage.Chinese, "ide", "Antigravity IDE 凭据")]
@@ -1268,7 +1293,7 @@ public sealed class UsageOverviewViewModelTests
 
         var provider = Assert.Single(viewModel.Providers);
         Assert.True(ReadBoolProperty(provider, "ShowSourceBadge"));
-        Assert.Equal("IDE 폴백", ReadStringProperty(provider, "SourceBadgeText"));
+        Assert.Equal("IDE", ReadStringProperty(provider, "SourceBadgeText"));
     }
 
     [Fact]
@@ -1291,7 +1316,7 @@ public sealed class UsageOverviewViewModelTests
         var tooltip = ReadStringProperty(provider, "SourceBadgeToolTipText");
         // IDE fallback is live, so the "no OAuth client (refresh will fail)" note is suppressed.
         Assert.DoesNotContain("없음", tooltip);
-        Assert.Contains("IDE 폴백", tooltip);
+        Assert.Contains("Antigravity IDE", tooltip);
     }
 
     [Fact]
@@ -1340,7 +1365,7 @@ public sealed class UsageOverviewViewModelTests
         var lines = provider.LastErrorText.Split('\n');
         Assert.Equal(2, lines.Length);
         Assert.StartsWith("Cloud:", lines[0]);
-        Assert.StartsWith("IDE 폴백:", lines[1]);
+        Assert.StartsWith("IDE:", lines[1]);
     }
 
     [Fact]
@@ -1620,62 +1645,6 @@ public sealed class UsageOverviewViewModelTests
         Assert.Equal("시간 초과", ReadStringProperty(provider, "StatusBadgeText"));
     }
 
-    [Fact]
-    public void CodexProviderExposesConfiguredProfilesAndSelection()
-    {
-        var snapshot = Snapshot("codex");
-        var profiles = new[]
-        {
-            new CodexProfileSetting(CodexProfileSetting.DefaultId, "Default", @"C:\Codex\default\auth.json", true),
-            new CodexProfileSetting("work", "Work", @"C:\Codex\work\auth.json")
-        };
-        var viewModel = new UsageViewModel();
-
-        viewModel.Update(
-            [snapshot],
-            isRefreshing: false,
-            LimitDisplayMode.Bars,
-            AppLanguage.English,
-            codexProfiles: profiles,
-            selectedCodexProfileId: "work");
-
-        var provider = Assert.Single(viewModel.Providers);
-        Assert.True(provider.ShowCodexProfileSelector);
-        Assert.Equal("work", provider.SelectedCodexProfileId);
-        Assert.Collection(
-            provider.CodexProfiles,
-            profile =>
-            {
-                Assert.Equal(CodexProfileSetting.DefaultId, profile.Id);
-                Assert.False(profile.IsSelected);
-            },
-            profile =>
-            {
-                Assert.Equal("work", profile.Id);
-                Assert.True(profile.IsSelected);
-            });
-    }
-
-    [Fact]
-    public void NonCodexProviderHidesProfileSelector()
-    {
-        var viewModel = new UsageViewModel();
-
-        viewModel.Update(
-            [Snapshot("claude")],
-            isRefreshing: false,
-            LimitDisplayMode.Bars,
-            AppLanguage.English,
-            codexProfiles:
-            [
-                new CodexProfileSetting(CodexProfileSetting.DefaultId, "Default", @"C:\Codex\auth.json", true)
-            ],
-            selectedCodexProfileId: CodexProfileSetting.DefaultId);
-
-        var provider = Assert.Single(viewModel.Providers);
-        Assert.False(provider.ShowCodexProfileSelector);
-        Assert.Empty(provider.CodexProfiles);
-    }
 
     private static UsageSnapshot AntigravitySnapshot()
     {
@@ -1728,5 +1697,25 @@ public sealed class UsageOverviewViewModelTests
         var property = instance.GetType().GetProperty(propertyName);
         Assert.NotNull(property);
         return Assert.IsType<bool>(property!.GetValue(instance));
+    }
+
+    [Theory]
+    [InlineData(AppLanguage.English, "automatically", "Antigravity install")]
+    [InlineData(AppLanguage.Korean, "자동", "Antigravity 설치")]
+    [InlineData(AppLanguage.Japanese, "自動", "Antigravity")]
+    [InlineData(AppLanguage.Chinese, "自动", "Antigravity")]
+    public void OAuthClientOriginNoneWordingDescribesBundleAutoRefresh(
+        AppLanguage language,
+        string mustContain,
+        string mustReferenceAntigravity)
+    {
+        var text = AppText.Get(language, AppStringKeys.OAuthClientOriginNone);
+
+        Assert.Contains(mustContain, text);
+        Assert.Contains(mustReferenceAntigravity, text);
+        Assert.DoesNotContain("refresh will fail", text);
+        Assert.DoesNotContain("갱신 실패", text);
+        Assert.DoesNotContain("更新失敗", text);
+        Assert.DoesNotContain("刷新失败", text);
     }
 }

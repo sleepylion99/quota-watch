@@ -13,7 +13,7 @@ public sealed record LimitWarning(
     DateTimeOffset? ResetAt,
     string? AccountKey)
 {
-    public string Key => $"{ProviderId}:{WindowId}";
+    public string Key => $"{ProviderId}:{WindowId}:{AccountKey ?? string.Empty}";
 
     public bool IsWeeklyLimit =>
         WindowId.Equals("weekly", StringComparison.OrdinalIgnoreCase)

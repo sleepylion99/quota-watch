@@ -39,6 +39,102 @@ public sealed class DepletionPredictionViewModelTests
     }
 
     [Fact]
+    public void UpdateIncludesDateForMultiDayDepletionEta()
+    {
+        var prediction = new DepletionPrediction(
+            PredictionState.WillDeplete,
+            TimeSpan.FromDays(5) + TimeSpan.FromHours(19),
+            Now.AddDays(5).AddHours(19),
+            1,
+            [
+                Sample(Now.AddMinutes(-20), 40),
+                Sample(Now.AddMinutes(-10), 45),
+                Sample(Now, 50)
+            ]);
+        var viewModel = new UsageViewModel();
+
+        viewModel.Update(
+            [Snapshot()],
+            false,
+            LimitDisplayMode.Bars,
+            AppLanguage.Korean,
+            predictions: Predictions(prediction));
+
+        var provider = Assert.Single(viewModel.Providers);
+        var localDepletionAt = prediction.DepletionAt!.Value.LocalDateTime;
+        var expectedDateTime = localDepletionAt.ToString(
+            "M월 d일 tt h:mm",
+            System.Globalization.CultureInfo.GetCultureInfo("ko"));
+        Assert.Equal($"{expectedDateTime}경 소진 예상", provider.PredictionDetailText);
+    }
+
+    [Fact]
+    public void UpdateIncludesDateWhenDepletionCrossesMidnightWithinDay()
+    {
+        // Under 24h remaining, but depletion lands on the next calendar day.
+        var localNow = DateTime.Today.AddHours(23);
+        var depletionLocal = localNow.AddHours(2);
+        var depletionAt = new DateTimeOffset(depletionLocal);
+        var prediction = new DepletionPrediction(
+            PredictionState.WillDeplete,
+            TimeSpan.FromHours(2),
+            depletionAt,
+            1,
+            [
+                Sample(Now.AddMinutes(-20), 40),
+                Sample(Now.AddMinutes(-10), 45),
+                Sample(Now, 50)
+            ]);
+        var viewModel = new UsageViewModel();
+
+        viewModel.Update(
+            [Snapshot()],
+            false,
+            LimitDisplayMode.Bars,
+            AppLanguage.Korean,
+            predictions: Predictions(prediction));
+
+        var provider = Assert.Single(viewModel.Providers);
+        var expectedDateTime = depletionLocal.ToString(
+            "M월 d일 tt h:mm",
+            System.Globalization.CultureInfo.GetCultureInfo("ko"));
+        Assert.Equal($"{expectedDateTime}경 소진 예상", provider.PredictionDetailText);
+    }
+
+    [Fact]
+    public void UpdateOmitsDateForSameDayDepletionEta()
+    {
+        var localNow = DateTime.Today.AddHours(10);
+        var depletionLocal = localNow.AddHours(2);
+        var depletionAt = new DateTimeOffset(depletionLocal);
+        var prediction = new DepletionPrediction(
+            PredictionState.WillDeplete,
+            TimeSpan.FromHours(2),
+            depletionAt,
+            1,
+            [
+                Sample(Now.AddMinutes(-20), 40),
+                Sample(Now.AddMinutes(-10), 45),
+                Sample(Now, 50)
+            ]);
+        var viewModel = new UsageViewModel();
+
+        viewModel.Update(
+            [Snapshot()],
+            false,
+            LimitDisplayMode.Bars,
+            AppLanguage.Korean,
+            predictions: Predictions(prediction));
+
+        var provider = Assert.Single(viewModel.Providers);
+        var expectedTime = depletionLocal.ToString(
+            "t",
+            System.Globalization.CultureInfo.GetCultureInfo("ko"));
+        Assert.Equal($"{expectedTime}경 소진 예상", provider.PredictionDetailText);
+        Assert.DoesNotContain("월", provider.PredictionDetailText);
+    }
+
+    [Fact]
     public void UpdateShowsResetFirstMessageWithoutProjectionLine()
     {
         var prediction = new DepletionPrediction(

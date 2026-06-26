@@ -90,9 +90,21 @@
   <data name="LimitWarningThresholdText" xml:space="preserve"><value>알림 기준</value></data>
   <data name="LimitWarningThresholdOption" xml:space="preserve"><value>남은 {0}% 이하 / {1}% 사용</value></data>
   <data name="LimitWarningCustomThresholdLabel" xml:space="preserve"><value>직접 입력:</value></data>
+  <data name="SettingsInactiveAccountWarning" xml:space="preserve"><value>비활성 계정도 소진 경고</value></data>
+  <data name="SettingsInactiveAccountWarningHint" xml:space="preserve"><value>다른 프로필을 백그라운드(30분 주기)로 점검해, 계정을 전환하지 않아도 소진 경고를 받습니다.</value></data>
   <data name="UpdateCheckTitleText" xml:space="preserve"><value>업데이트</value></data>
   <data name="UpdateCheckDetailText" xml:space="preserve"><value>새 릴리즈가 있는지 확인합니다.</value></data>
   <data name="CheckForUpdatesButtonText" xml:space="preserve"><value>업데이트 확인</value></data>
+  <data name="UpdateAvailableTitleText" xml:space="preserve"><value>새 버전 발견</value></data>
+  <data name="UpdateAvailableMessageText" xml:space="preserve"><value>버전 {0}이 발견되었습니다. 업데이트 페이지를 여시겠습니까?</value></data>
+  <data name="UpdateAvailableConfirmButtonText" xml:space="preserve"><value>업데이트 페이지 열기</value></data>
+  <data name="UpdateAvailableCancelButtonText" xml:space="preserve"><value>취소</value></data>
+  <data name="UpdateReleaseOpenFailedText" xml:space="preserve"><value>업데이트 페이지를 열지 못했습니다. GitHub Releases를 직접 열어 주세요.</value></data>
+  <data name="UpdateCheckStatusChecking" xml:space="preserve"><value>업데이트 확인 중...</value></data>
+  <data name="UpdateCheckStatusAvailable" xml:space="preserve"><value>새 버전 {0} 사용 가능: {1}</value></data>
+  <data name="UpdateCheckStatusUpToDate" xml:space="preserve"><value>최신 버전입니다. 현재 버전 {0}</value></data>
+  <data name="UpdateCheckStatusFailed" xml:space="preserve"><value>업데이트 확인에 실패했습니다. 네트워크 상태를 확인하세요.</value></data>
+  <data name="UpdateCheckReleaseNotAccessible" xml:space="preserve"><value>GitHub 릴리즈 정보를 볼 수 없습니다. 저장소 또는 릴리즈 공개 상태를 확인하세요.</value></data>
   <data name="DiagnosticLogTitleText" xml:space="preserve"><value>진단 로그</value></data>
   <data name="DiagnosticLogDetailText" xml:space="preserve"><value>버그를 발견하셨나요? 이 로그를 복사해서 개발자에게 보내주세요.</value></data>
   <data name="CopyDiagnosticLogButtonText" xml:space="preserve"><value>로그 복사</value></data>
@@ -137,18 +149,18 @@
   <data name="NoValueBadgeText" xml:space="preserve"><value>값 없음</value></data>
   <data name="NoValueBadgeToolTipText" xml:space="preserve"><value>표시할 한도 값을 가져오지 못했습니다. 옆 상태 배지에서 원인을 확인하세요.</value></data>
   <data name="SourceBadgeCloud" xml:space="preserve"><value>Cloud</value></data>
-  <data name="SourceBadgeIdeFallback" xml:space="preserve"><value>IDE 폴백</value></data>
+  <data name="SourceBadgeIdeFallback" xml:space="preserve"><value>IDE</value></data>
   <data name="SourceBadgeCloudToolTip" xml:space="preserve"><value>Antigravity Cloud에서 사용량 데이터를 가져왔습니다.</value></data>
-  <data name="SourceBadgeIdeFallbackToolTip" xml:space="preserve"><value>Cloud 조회가 막혀 로컬 Antigravity IDE 폴백으로 사용량 데이터를 가져왔습니다.</value></data>
+  <data name="SourceBadgeIdeFallbackToolTip" xml:space="preserve"><value>로컬 Antigravity IDE에서 사용량 데이터를 가져왔습니다.</value></data>
   <data name="OAuthClientOriginIde" xml:space="preserve"><value>Antigravity IDE 자격증명</value></data>
   <data name="OAuthClientOriginUserSaved" xml:space="preserve"><value>본인이 저장한 값</value></data>
   <data name="OAuthClientOriginEnvironment" xml:space="preserve"><value>환경변수</value></data>
-  <data name="OAuthClientOriginNone" xml:space="preserve"><value>(없음 — 만료 시 갱신 실패)</value></data>
+  <data name="OAuthClientOriginNone" xml:space="preserve"><value>(필요 시 Antigravity 설치 파일에서 자동으로 가져옵니다)</value></data>
   <data name="OAuthClientOriginTooltipPrefix" xml:space="preserve"><value>인증 갱신에 사용될 OAuth 클라이언트</value></data>
   <data name="AntigravityOAuthActiveClientLabel" xml:space="preserve"><value>현재 갱신에 사용 중</value></data>
   <data name="AntigravityOAuthActiveClientNone" xml:space="preserve"><value>토큰 갱신 클라이언트: 미설정 (IDE 실행 시 폴백 조회 · 없으면 만료 시 갱신 실패)</value></data>
   <data name="CloudPrefix" xml:space="preserve"><value>Cloud</value></data>
-  <data name="IdeFallbackPrefix" xml:space="preserve"><value>IDE 폴백</value></data>
+  <data name="IdeFallbackPrefix" xml:space="preserve"><value>IDE</value></data>
   <data name="AntigravityCauseHttp401" xml:space="preserve"><value>로그인이 만료되었습니다</value></data>
   <data name="AntigravityCauseTimeout" xml:space="preserve"><value>응답이 시간 내에 오지 않았습니다</value></data>
   <data name="AntigravityCauseNoEndpoint" xml:space="preserve"><value>실행 중인 Antigravity IDE를 찾지 못했습니다</value></data>
@@ -191,7 +203,7 @@
   <data name="PercentUsedValue" xml:space="preserve"><value>{0}% 사용</value></data>
   <data name="PercentLeftValue" xml:space="preserve"><value>{0}% 남음</value></data>
   <data name="ConfidenceValue" xml:space="preserve"><value>신뢰도: {0}</value></data>
-  <data name="SetupHintAntigravity" xml:space="preserve"><value>자동: 클라우드를 먼저 확인하고 안 되면 IDE로 확인합니다. 클라우드 설정은 Antigravity에서 Google 계정으로 로그인하면 됩니다.</value></data>
+  <data name="SetupHintAntigravity" xml:space="preserve"><value>자동: IDE를 먼저 확인하고 안 되면 클라우드로 확인합니다. 클라우드 설정은 Antigravity에서 Google 계정으로 로그인하면 됩니다.</value></data>
   <data name="SetupHintClaude" xml:space="preserve"><value>Claude Code OAuth 인증 정보를 사용합니다. Claude Code에서 한 번 로그인하면 되고, Claude Code를 계속 켜둘 필요는 없습니다.</value></data>
   <data name="ModeOptionAuto" xml:space="preserve"><value>자동</value></data>
   <data name="ModeOptionBasic" xml:space="preserve"><value>기본</value></data>
@@ -210,4 +222,73 @@
   <data name="PredictionNoDepletionFiveHour" xml:space="preserve"><value>현재 추세로는 이번 5시간 한도 도달 안 함</value></data>
   <data name="PredictionNoDepletionWeekly" xml:space="preserve"><value>현재 추세로는 이번주 주간 한도 도달 안 함</value></data>
   <data name="PredictionDepletionAt" xml:space="preserve"><value>{0:t}경 소진 예상</value></data>
+  <data name="AccountsWindowTitle" xml:space="preserve"><value>계정</value></data>
+  <data name="AccountsManagerButtonText" xml:space="preserve"><value>계정관리자</value></data>
+  <data name="AccountsTabCodex" xml:space="preserve"><value>Codex</value></data>
+  <data name="AccountsTabClaude" xml:space="preserve"><value>Claude</value></data>
+  <data name="AccountsTabAntigravity" xml:space="preserve"><value>Antigravity</value></data>
+  <data name="AccountsColumnAccount" xml:space="preserve"><value>계정</value></data>
+  <data name="AccountsColumnStatus" xml:space="preserve"><value>상태</value></data>
+  <data name="AccountsColumnPlan" xml:space="preserve"><value>플랜</value></data>
+  <data name="AccountsSyncFromIde" xml:space="preserve"><value>IDE에서 가져오기</value></data>
+  <data name="AccountsSyncFromCli" xml:space="preserve"><value>CLI에서 가져오기</value></data>
+  <data name="AccountsRefreshAll" xml:space="preserve"><value>모두 새로고침</value></data>
+  <data name="AccountsSwitch" xml:space="preserve"><value>전환</value></data>
+  <data name="AccountsMoveToTrash" xml:space="preserve"><value>삭제</value></data>
+  <data name="AccountsMovedToTrash" xml:space="preserve"><value>휴지통으로 이동했습니다.</value></data>
+  <data name="AccountsTrash" xml:space="preserve"><value>휴지통</value></data>
+  <data name="AccountsTrashBack" xml:space="preserve"><value>계정으로 돌아가기</value></data>
+  <data name="AccountsTrashEmpty" xml:space="preserve"><value>휴지통이 비어 있습니다.</value></data>
+  <data name="AccountsTrashRestore" xml:space="preserve"><value>복원</value></data>
+  <data name="AccountsTrashDeletePermanently" xml:space="preserve"><value>완전 삭제</value></data>
+  <data name="AccountsTrashCancel" xml:space="preserve"><value>취소</value></data>
+  <data name="AccountsTrashConfirmTitle" xml:space="preserve"><value>완전히 삭제할까요?</value></data>
+  <data name="AccountsTrashConfirmMessage" xml:space="preserve"><value>{1}의 {0} 계정을 완전히 삭제할까요? 이 작업은 되돌릴 수 없습니다.</value></data>
+  <data name="AccountsTrashDeletedAt" xml:space="preserve"><value>삭제됨 {0:g}</value></data>
+  <data name="AccountsActiveBadge" xml:space="preserve"><value>사용 중</value></data>
+  <data name="AccountsStatusIdle" xml:space="preserve"><value>대기</value></data>
+  <data name="AccountsStatusError" xml:space="preserve"><value>오류</value></data>
+  <data name="AccountsStatusLoading" xml:space="preserve"><value>불러오는 중…</value></data>
+  <data name="AccountsStatusLowest" xml:space="preserve"><value>최저 {0}%</value></data>
+  <data name="AccountsOAuthClientSectionTitle" xml:space="preserve"><value>OAuth 클라이언트</value></data>
+  <data name="AccountsOAuthClientActiveLabel" xml:space="preserve"><value>활성 클라이언트: {0}</value></data>
+  <data name="AccountsOAuthClientAdd" xml:space="preserve"><value>클라이언트 추가</value></data>
+  <data name="AccountsOAuthClientLabelHint" xml:space="preserve"><value>이름</value></data>
+  <data name="AccountsOAuthClientIdHint" xml:space="preserve"><value>클라이언트 ID</value></data>
+  <data name="AccountsOAuthClientSecretHint" xml:space="preserve"><value>클라이언트 시크릿</value></data>
+  <data name="AccountsOAuthClientRemove" xml:space="preserve"><value>삭제</value></data>
+  <data name="AccountsOAuthClientBuiltIn" xml:space="preserve"><value>번들 기본값</value></data>
+  <data name="AccountsSignInWithGoogle" xml:space="preserve"><value>Google로 로그인</value></data>
+  <data name="AccountsSignInWithClaude" xml:space="preserve"><value>Anthropic으로 로그인</value></data>
+  <data name="AccountsSubmitClaudeCode" xml:space="preserve"><value>코드 제출</value></data>
+  <data name="ClaudeSignInBrowserApproved" xml:space="preserve"><value>브라우저에서 승인한 뒤 코드를 붙여넣으세요.</value></data>
+  <data name="ClaudeSignInBrowserFailed" xml:space="preserve"><value>브라우저를 열지 못했습니다. 이 URL을 직접 여세요: {0}</value></data>
+  <data name="ClaudeSignInAdded" xml:space="preserve"><value>계정 추가됨: {0}</value></data>
+  <data name="ClaudeSignInCancelled" xml:space="preserve"><value>취소되었습니다.</value></data>
+  <data name="ClaudeSignInExchangeFailed" xml:space="preserve"><value>토큰 교환 실패: {0}</value></data>
+  <data name="ClaudeSignInWriteFailed" xml:space="preserve"><value>저장 실패: {0}</value></data>
+  <data name="ClaudeSignInFailed" xml:space="preserve"><value>로그인 실패: {0}</value></data>
+  <data name="ClaudeSignInError" xml:space="preserve"><value>오류: {0}: {1}</value></data>
+  <data name="AccountsLoginAdded" xml:space="preserve"><value>{0} 추가됨.</value></data>
+  <data name="AccountsLoginDuplicate" xml:space="preserve"><value>이미 추가된 계정입니다.</value></data>
+  <data name="AccountsLoginNoActiveClient" xml:space="preserve"><value>먼저 OAuth 클라이언트를 추가하거나 선택하세요.</value></data>
+  <data name="AccountsLoginCancelled" xml:space="preserve"><value>로그인이 취소되었습니다.</value></data>
+  <data name="AccountsLoginAuthFailed" xml:space="preserve"><value>로그인 실패: {0}</value></data>
+  <data name="AccountsLoginExchangeFailed" xml:space="preserve"><value>토큰 교환 실패: {0}</value></data>
+  <data name="AccountsLoginUserInfoFailed" xml:space="preserve"><value>계정 이메일을 읽지 못했습니다.</value></data>
+  <data name="SettingsAntigravityMovedToAccounts" xml:space="preserve"><value>Antigravity 로그인과 OAuth 클라이언트는 이제 계정관리자에서 관리합니다.</value></data>
+  <data name="AccountsEmpty" xml:space="preserve"><value>등록된 계정이 없습니다. 로그인된 상태에서 "가져오기" 를 눌러 현재 계정을 추가하세요.</value></data>
+  <data name="AccountsSyncNotYetImplemented" xml:space="preserve"><value>{0} 계정 가져오기는 후속 릴리스에 추가됩니다.</value></data>
+  <data name="AccountsSyncFailedNoLocalToken" xml:space="preserve"><value>가져올 로컬 로그인 정보가 없습니다.</value></data>
+  <data name="AccountsPlanFree" xml:space="preserve"><value>Free</value></data>
+  <data name="AccountsPlanPro" xml:space="preserve"><value>Pro</value></data>
+  <data name="AccountsPlanMax" xml:space="preserve"><value>Max</value></data>
+  <data name="AccountsAddProfile" xml:space="preserve"><value>프로필 추가</value></data>
+  <data name="AccountsCodexNeedsAdmin" xml:space="preserve"><value>프로필 생성에는 관리자 권한이 필요합니다. 앱을 완전히 종료한 뒤 관리자 권한으로 다시 실행하고 시도하세요.</value></data>
+  <data name="AccountsCodexProfileCreated" xml:space="preserve"><value>프로필을 만들었습니다. 60초 안에 새 터미널을 열거나 '. $PROFILE' 실행 후 "{0}" 로 로그인한 뒤 새로고침하세요. 로그인하지 않으면 빈 프로필은 자동으로 삭제됩니다.</value></data>
+  <data name="AccountsCodexEmpty" xml:space="preserve"><value>Codex 로그인을 찾지 못했습니다. 먼저 Codex(.codex 폴더)에 로그인하세요.</value></data>
+  <data name="AccountsLocalIdeRow" xml:space="preserve"><value>IDE (로컬)</value></data>
+  <data name="ResetCreditSummaryImminent" xml:space="preserve"><value>초기화권 {0}개 있고 곧 만료되는 게 있어요</value></data>
+  <data name="ResetCreditSummaryNormal" xml:space="preserve"><value>초기화권 {0}개 있음</value></data>
+  <data name="ResetCreditExpiryTooltip" xml:space="preserve"><value>가장 빠른 만료: {0}</value></data>
 </root>

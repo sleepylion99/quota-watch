@@ -1,8 +1,6 @@
+using System.Net.Http;
+using System.Runtime.Versioning;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text;
-using System.Text.RegularExpressions;
-using Microsoft.Data.Sqlite;
 
 namespace AiLimit.Core.Providers;
 
@@ -11,34 +9,118 @@ public enum AntigravityOAuthClientOrigin
     None,
     Environment,
     IdeCredentialFile,
-    UserSavedSettings
+    UserSavedSettings,
+    BundledDefault
 }
 
-internal sealed class AntigravityOAuthCredentialStore
+internal static class AntigravityOAuthCredentialStore
 {
     private const string OAuthAccessTokenEnvVar = "ANTIGRAVITY_OAUTH_ACCESS_TOKEN";
     private const string OAuthClientIdEnvVar = "ANTIGRAVITY_OAUTH_CLIENT_ID";
     private const string OAuthClientSecretEnvVar = "ANTIGRAVITY_OAUTH_CLIENT_SECRET";
-    private readonly string _path;
-    private readonly bool _allowVscdbFallback;
+    private const string TokenEndpoint = "https://oauth2.googleapis.com/token";
 
-    public AntigravityOAuthCredentialStore(string path)
+    /// <summary>
+    /// Exchanges a refresh token for a fresh access token using the supplied OAuth client values.
+    /// Returns <c>null</c> when the inputs are unusable or the exchange fails — this is the
+    /// "best effort" variant used by per-account flows that want to surface a failure rather
+    /// than propagate an exception. The HTTP status code of a non-success response is
+    /// surfaced via <paramref name="failureStatusCode"/> so callers can distinguish a
+    /// network problem from a server-side "missing client_secret" 400. Throws
+    /// <see cref="OperationCanceledException"/> when the caller cancels.
+    /// </summary>
+    internal static async Task<TokenRefreshResult?> RefreshAccessTokenAsync(
+        string refreshToken,
+        AntigravityOAuthClientConfig clientConfig,
+        HttpClient httpClient,
+        CancellationToken cancellationToken)
     {
-        _path = path;
-        _allowVscdbFallback = Path.GetFullPath(path).Equals(
-            Path.GetFullPath(DefaultCredentialsPath()),
-            StringComparison.OrdinalIgnoreCase);
+        var (result, _) = await RefreshAccessTokenAsync(
+            refreshToken, clientConfig, httpClient, captureFailureStatus: false, cancellationToken)
+            .ConfigureAwait(false);
+        return result;
     }
 
-    public static string DefaultCredentialsPath()
+    internal static async Task<(TokenRefreshResult? Result, System.Net.HttpStatusCode? FailureStatusCode)> RefreshAccessTokenAsync(
+        string refreshToken,
+        AntigravityOAuthClientConfig clientConfig,
+        HttpClient httpClient,
+        bool captureFailureStatus,
+        CancellationToken cancellationToken)
     {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".antigravity",
-            "oauth_creds.json");
+        if (httpClient is null)
+        {
+            throw new ArgumentNullException(nameof(httpClient));
+        }
+
+        if (string.IsNullOrWhiteSpace(refreshToken)
+            || string.IsNullOrWhiteSpace(clientConfig.ClientId))
+        {
+            return (null, null);
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, TokenEndpoint);
+        var form = new Dictionary<string, string>
+        {
+            ["refresh_token"] = refreshToken,
+            ["client_id"] = clientConfig.ClientId!,
+            ["grant_type"] = "refresh_token"
+        };
+        if (!string.IsNullOrWhiteSpace(clientConfig.ClientSecret))
+        {
+            form["client_secret"] = clientConfig.ClientSecret!;
+        }
+
+        request.Content = new FormUrlEncodedContent(form);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return (null, captureFailureStatus ? response.StatusCode : null);
+        }
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (document.RootElement.TryGetProperty("access_token", out var accessElement)
+                && accessElement.ValueKind == JsonValueKind.String)
+            {
+                var token = accessElement.GetString();
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    return (null, null);
+                }
+
+                var expiresIn = document.RootElement.TryGetProperty("expires_in", out var expiresInElement)
+                    && expiresInElement.TryGetInt64(out var seconds)
+                    ? seconds
+                    : 3600;
+
+                return (new TokenRefreshResult(token!, expiresIn), null);
+            }
+        }
+        catch (JsonException)
+        {
+            // fall through
+        }
+
+        return (null, null);
     }
 
-    public string? ResolveAccessToken()
+    internal readonly record struct TokenRefreshResult(string AccessToken, long ExpiresInSeconds);
+
+    public static AntigravityOAuthCredentials? Load()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return null;
+        }
+
+        return new AntigravityWindowsCredentialStore().Load();
+    }
+
+    public static string? ResolveAccessToken()
     {
         return ResolveEnvironmentAccessToken() ?? Load()?.AccessToken;
     }
@@ -49,34 +131,11 @@ internal sealed class AntigravityOAuthCredentialStore
         return string.IsNullOrWhiteSpace(envToken) ? null : envToken.Trim();
     }
 
-    public AntigravityOAuthCredentials? Load()
-    {
-        try
-        {
-            if (!File.Exists(_path))
-            {
-                return LoadVscdbFallback();
-            }
-
-            using var document = JsonDocument.Parse(File.ReadAllText(_path));
-            var root = document.RootElement;
-            return new AntigravityOAuthCredentials(
-                root.TryGetProperty("access_token", out var accessToken) ? accessToken.GetString() : null,
-                root.TryGetProperty("refresh_token", out var refreshToken) ? refreshToken.GetString() : null,
-                root.TryGetProperty("client_id", out var clientId) ? clientId.GetString() : null,
-                root.TryGetProperty("client_secret", out var clientSecret) ? clientSecret.GetString() : null,
-                ReadExpiry(root));
-        }
-        catch
-        {
-            return LoadVscdbFallback();
-        }
-    }
-
     public static string ResolveOAuthClientSecret(AntigravityOAuthCredentials credentials)
     {
         return TryResolveOAuthClientSecret(credentials)
-            ?? throw new InvalidOperationException($"Google Antigravity OAuth client secret was not found. Set {OAuthClientSecretEnvVar} or sign in to Antigravity again.");
+            ?? throw new InvalidOperationException(
+                $"Google Antigravity OAuth client secret was not found. Set {OAuthClientSecretEnvVar} or sign in to Antigravity again.");
     }
 
     public static string? TryResolveOAuthClientSecret(AntigravityOAuthCredentials credentials)
@@ -87,62 +146,18 @@ internal sealed class AntigravityOAuthCredentialStore
             return envSecret.Trim();
         }
 
-        if (!string.IsNullOrWhiteSpace(credentials.ClientSecret))
-        {
-            return credentials.ClientSecret!;
-        }
-
         if (!OperatingSystem.IsWindows())
         {
             return null;
         }
 
-        var userSaved = new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath()).Load();
-        if (!string.IsNullOrWhiteSpace(userSaved.ClientSecret))
+        var activeSecret = DefaultRegistry().GetActive()?.ClientSecret;
+        if (!string.IsNullOrWhiteSpace(activeSecret))
         {
-            return userSaved.ClientSecret;
+            return activeSecret;
         }
 
-        return null;
-    }
-
-    public static AntigravityOAuthClientOrigin ResolveActiveOAuthClientOrigin()
-    {
-        var userClientStorePath = OperatingSystem.IsWindows()
-            ? AntigravityOAuthClientStore.DefaultPath()
-            : string.Empty;
-        return ResolveActiveOAuthClientOrigin(
-            DefaultCredentialsPath(),
-            userClientStorePath);
-    }
-
-    internal static AntigravityOAuthClientOrigin ResolveActiveOAuthClientOrigin(
-        string ideCredentialsPath,
-        string userClientStorePath)
-    {
-        var envSecret = Environment.GetEnvironmentVariable(OAuthClientSecretEnvVar);
-        if (!string.IsNullOrWhiteSpace(envSecret))
-        {
-            return AntigravityOAuthClientOrigin.Environment;
-        }
-
-        var ideCredentials = new AntigravityOAuthCredentialStore(ideCredentialsPath).Load();
-        if (ideCredentials is not null
-            && !string.IsNullOrWhiteSpace(ideCredentials.ClientSecret))
-        {
-            return AntigravityOAuthClientOrigin.IdeCredentialFile;
-        }
-
-        if (OperatingSystem.IsWindows())
-        {
-            var userClient = new AntigravityOAuthClientStore(userClientStorePath).Load();
-            if (!string.IsNullOrWhiteSpace(userClient.ClientSecret))
-            {
-                return AntigravityOAuthClientOrigin.UserSavedSettings;
-            }
-        }
-
-        return AntigravityOAuthClientOrigin.None;
+        return new AntigravityAppBundleClientStore().Load()?.ClientSecret;
     }
 
     public static string? ResolveOAuthClientId(AntigravityOAuthCredentials credentials)
@@ -153,90 +168,97 @@ internal sealed class AntigravityOAuthCredentialStore
             return envClientId.Trim();
         }
 
-        if (!string.IsNullOrWhiteSpace(credentials.ClientId))
-        {
-            return credentials.ClientId!.Trim();
-        }
-
         if (!OperatingSystem.IsWindows())
         {
             return null;
         }
 
-        var userSaved = new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath()).Load();
-        if (!string.IsNullOrWhiteSpace(userSaved.ClientId))
+        var activeId = DefaultRegistry().GetActive()?.ClientId;
+        if (!string.IsNullOrWhiteSpace(activeId))
         {
-            return userSaved.ClientId;
+            return activeId;
         }
 
-        return null;
+        return new AntigravityAppBundleClientStore().Load()?.ClientId;
     }
 
-    public void SaveRefreshedAccessToken(string accessToken, DateTimeOffset expiresAt)
+    public static AntigravityOAuthClientConfig ResolveClientFromRegistry(AntigravityOAuthClientRegistry registry)
     {
-        var node = File.Exists(_path)
-            ? JsonNode.Parse(File.ReadAllText(_path)) as JsonObject
-            : null;
-        node ??= [];
-        node["access_token"] = accessToken;
-        node["expiry_date"] = expiresAt.ToUnixTimeMilliseconds();
-
-        var directory = Path.GetDirectoryName(_path);
-        if (!string.IsNullOrWhiteSpace(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var tempPath = $"{_path}.{Guid.NewGuid():N}.tmp";
-        try
-        {
-            File.WriteAllText(
-                tempPath,
-                node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            File.Move(tempPath, _path, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(tempPath))
-            {
-                File.Delete(tempPath);
-            }
-        }
+        var active = registry.GetActive();
+        return new AntigravityOAuthClientConfig(active?.ClientId, active?.ClientSecret);
     }
 
-    private static DateTimeOffset? ReadExpiry(JsonElement root)
+    /// <summary>
+    /// Resolves the OAuth client values of the registry's active entry (which applies the
+    /// one-time legacy migration the rest of the app sees). Used by the failure-hint path so
+    /// it reflects the registry instead of the retired single-client store.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    public static AntigravityOAuthClientConfig ResolveActiveOAuthClientConfig()
+        => ResolveClientFromRegistry(DefaultRegistry());
+
+    [SupportedOSPlatform("windows")]
+    private static AntigravityOAuthClientRegistry DefaultRegistry()
+        => new(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "AiLimit", "antigravity-oauth-clients.json"),
+            AntigravityOAuthClientStore.DefaultPath(),
+            new AntigravityAppBundleClientStore().Load() ?? AntigravityBundledOAuthClient.Config,
+            new DpapiSecretProtector(),
+            legacyLoader: () => new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath()).LoadLegacyPlaintext());
+
+    public static AntigravityOAuthClientOrigin ResolveActiveOAuthClientOrigin()
     {
-        if (!root.TryGetProperty("expiry_date", out var value))
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OAuthClientSecretEnvVar)))
         {
-            return null;
+            return AntigravityOAuthClientOrigin.Environment;
         }
 
-        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number))
+        if (!OperatingSystem.IsWindows())
         {
-            return FromUnixValue(number);
+            return AntigravityOAuthClientOrigin.None;
         }
 
-        if (value.ValueKind == JsonValueKind.String
-            && long.TryParse(value.GetString(), out var parsed))
+        // The registry's active entry is the source the refresh path actually uses. Its
+        // built-in entry is the bundled default (either scanned from the IDE or the embedded
+        // public client), so report it as BundledDefault rather than UserSavedSettings.
+        var active = DefaultRegistry().GetActive();
+        if (active is not null && !string.IsNullOrWhiteSpace(active.ClientSecret))
         {
-            return FromUnixValue(parsed);
+            return active.IsBuiltIn
+                ? AntigravityOAuthClientOrigin.BundledDefault
+                : AntigravityOAuthClientOrigin.UserSavedSettings;
         }
 
-        return null;
+        if (!string.IsNullOrWhiteSpace(new AntigravityAppBundleClientStore().Load()?.ClientSecret))
+        {
+            return AntigravityOAuthClientOrigin.IdeCredentialFile;
+        }
+
+        return AntigravityOAuthClientOrigin.None;
     }
 
-    private static DateTimeOffset FromUnixValue(long value)
+    internal static AntigravityOAuthClientOrigin ResolveActiveOAuthClientOrigin(
+        string? envClientSecret,
+        string? userSavedClientSecret,
+        string? bundleClientSecret)
     {
-        return value >= 10_000_000_000
-            ? DateTimeOffset.FromUnixTimeMilliseconds(value)
-            : DateTimeOffset.FromUnixTimeSeconds(value);
-    }
+        if (!string.IsNullOrWhiteSpace(envClientSecret))
+        {
+            return AntigravityOAuthClientOrigin.Environment;
+        }
 
-    private AntigravityOAuthCredentials? LoadVscdbFallback()
-    {
-        return _allowVscdbFallback
-            ? new AntigravityVscdbCredentialStore().Load()
-            : null;
+        if (!string.IsNullOrWhiteSpace(userSavedClientSecret))
+        {
+            return AntigravityOAuthClientOrigin.UserSavedSettings;
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundleClientSecret))
+        {
+            return AntigravityOAuthClientOrigin.IdeCredentialFile;
+        }
+
+        return AntigravityOAuthClientOrigin.None;
     }
 }
 
@@ -251,474 +273,4 @@ internal sealed record AntigravityOAuthCredentials(
     {
         return ExpiresAt is not null && ExpiresAt.Value <= now.AddMinutes(1);
     }
-}
-
-internal sealed class AntigravityVscdbCredentialStore
-{
-    private const string OAuthTokenKey = "antigravityUnifiedStateSync.oauthToken";
-    private const string UserStatusKey = "antigravityUnifiedStateSync.userStatus";
-    private const string LegacyAgentStateKey = "jetskiStateSync.agentManagerInitState";
-    private const string AuthStatusKey = "antigravityAuthStatus";
-    private static readonly string[] CredentialStateKeys = [AuthStatusKey, OAuthTokenKey, UserStatusKey, LegacyAgentStateKey];
-    private static readonly Regex StoredValuePattern = new("[A-Za-z0-9+/]{32,}={0,2}", RegexOptions.Compiled);
-    private static readonly Regex AccessTokenPattern = new("ya29\\.[A-Za-z0-9_.-]+", RegexOptions.Compiled);
-    private static readonly Regex RefreshTokenPattern = new("1//[A-Za-z0-9_-]+", RegexOptions.Compiled);
-    private static readonly Regex ClientIdPattern = new("[0-9]+-[A-Za-z0-9_-]+\\.apps\\.googleusercontent\\.com", RegexOptions.Compiled);
-    private static readonly Regex ClientSecretPropertyPattern = new(
-        "(?:client_secret|clientSecret)[\"'\\s:=]+([A-Za-z0-9_-]{8,})",
-        RegexOptions.Compiled);
-    private readonly IReadOnlyList<string> _candidatePaths;
-
-    public AntigravityVscdbCredentialStore()
-        : this(DefaultCandidatePaths())
-    {
-    }
-
-    internal AntigravityVscdbCredentialStore(IReadOnlyList<string> candidatePaths)
-    {
-        _candidatePaths = candidatePaths;
-    }
-
-    public AntigravityOAuthCredentials? Load()
-    {
-        AntigravityOAuthCredentials? merged = null;
-        foreach (var path in _candidatePaths)
-        {
-            var credentials = LoadFromPath(path);
-            if (credentials is not null)
-            {
-                merged = MergeCredentials(merged, credentials);
-                if (!string.IsNullOrWhiteSpace(merged.AccessToken)
-                    && !string.IsNullOrWhiteSpace(merged.RefreshToken))
-                {
-                    return merged;
-                }
-            }
-        }
-
-        return merged;
-    }
-
-    internal static AntigravityOAuthCredentials? ParseStoredOAuthToken(string storedValue, string sourceKey = "")
-    {
-        WriteDiagnostic($"parse start key={sourceKey} value-length={storedValue.Length}");
-
-        var fromPlainText = ParseTokenText(storedValue);
-        if (fromPlainText is not null)
-        {
-            WriteDiagnostic($"key={sourceKey} matched plain text. {SummarizeCredentials(fromPlainText)}");
-            return fromPlainText;
-        }
-
-        try
-        {
-            var outer = Convert.FromBase64String(AddBase64Padding(storedValue.Trim()));
-            WriteDiagnostic($"key={sourceKey} base64-decoded bytes={outer.Length}");
-
-            var fromDecodedText = ParseTokenText(Encoding.Latin1.GetString(outer));
-            if (fromDecodedText is not null)
-            {
-                WriteDiagnostic($"key={sourceKey} matched decoded text. {SummarizeCredentials(fromDecodedText)}");
-                return fromDecodedText;
-            }
-
-            var outerFields = ParseProtobuf(outer).ToList();
-            WriteDiagnostic($"key={sourceKey} outer protobuf fields=[{SummarizeFields(outerFields)}]");
-
-            var inner = outerFields
-                .FirstOrDefault(field => field.Number == 1 && field.WireType == 2)?
-                .Bytes;
-            if (inner is not null)
-            {
-                var innerFields = ParseProtobuf(inner).ToList();
-                WriteDiagnostic($"key={sourceKey} inner(field1) protobuf fields=[{SummarizeFields(innerFields)}]");
-
-                var encodedTokenPayload = innerFields
-                    .FirstOrDefault(field => field.Number == 2 && field.WireType == 2)?
-                    .Bytes;
-                if (encodedTokenPayload is not null && encodedTokenPayload.Length > 2)
-                {
-                    var payloadSlice = encodedTokenPayload.AsSpan(2).ToArray();
-                    var payloadBytes = TryDecodeBase64(payloadSlice) ?? payloadSlice;
-                    var fromUnifiedPayload = ParseTokenText(Encoding.Latin1.GetString(payloadBytes));
-                    if (fromUnifiedPayload is not null)
-                    {
-                        WriteDiagnostic($"key={sourceKey} matched unified payload. {SummarizeCredentials(fromUnifiedPayload)}");
-                        return fromUnifiedPayload;
-                    }
-                }
-            }
-
-            var fromNestedFields = ParseTokenTextFragments(outer);
-            if (fromNestedFields is not null)
-            {
-                WriteDiagnostic($"key={sourceKey} matched via nested-fragment scan. {SummarizeCredentials(fromNestedFields)}");
-                return fromNestedFields;
-            }
-
-            WriteDiagnostic($"key={sourceKey} no credentials matched after base64+protobuf scan");
-        }
-        catch (Exception ex)
-        {
-            WriteDiagnostic($"key={sourceKey} parse exception {ex.GetType().Name}: {ex.Message}");
-        }
-
-        var fromRawScan = ParseTokenTextFragments(Encoding.Latin1.GetBytes(storedValue));
-        if (fromRawScan is not null)
-        {
-            WriteDiagnostic($"key={sourceKey} matched via raw-byte fragment scan. {SummarizeCredentials(fromRawScan)}");
-        }
-        else
-        {
-            WriteDiagnostic($"key={sourceKey} no credentials matched at all");
-        }
-        return fromRawScan;
-    }
-
-    private static string SummarizeFields(IReadOnlyCollection<ProtobufField> fields)
-    {
-        return string.Join(",", fields.Select(f => $"#{f.Number}:wt{f.WireType}:len{(f.Bytes?.Length ?? 0)}"));
-    }
-
-    private static string SummarizeCredentials(AntigravityOAuthCredentials credentials)
-    {
-        return $"access={!string.IsNullOrWhiteSpace(credentials.AccessToken)} refresh={!string.IsNullOrWhiteSpace(credentials.RefreshToken)} clientId={!string.IsNullOrWhiteSpace(credentials.ClientId)} clientSecret={!string.IsNullOrWhiteSpace(credentials.ClientSecret)}";
-    }
-
-    private static void WriteDiagnostic(string message)
-    {
-        if (!IsDiagnosticLoggingEnabled())
-        {
-            return;
-        }
-
-        try
-        {
-            var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "AiLimit");
-            Directory.CreateDirectory(directory);
-            File.AppendAllText(
-                Path.Combine(directory, "dashboard-debug.log"),
-                $"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss} [Info] [AntigravityVscdb] {DiagnosticSanitizer.Redact(message)}{Environment.NewLine}");
-        }
-        catch
-        {
-            // Diagnostics must never break credential loading.
-        }
-    }
-
-    private static bool IsDiagnosticLoggingEnabled()
-    {
-        var value = Environment.GetEnvironmentVariable("AILIMIT_DEBUG_LOG");
-        return value is "1" || value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
-    }
-
-    private AntigravityOAuthCredentials? LoadFromPath(string path)
-    {
-        try
-        {
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-
-            var sqliteCredentials = LoadFromSqlite(path);
-            if (sqliteCredentials is not null)
-            {
-                return sqliteCredentials;
-            }
-
-            var text = ReadFileText(path);
-            var keyIndex = 0;
-            AntigravityOAuthCredentials? merged = null;
-            while ((keyIndex = text.IndexOf(OAuthTokenKey, keyIndex, StringComparison.Ordinal)) >= 0)
-            {
-                var searchStart = keyIndex + OAuthTokenKey.Length;
-                var searchLength = Math.Min(8192, text.Length - searchStart);
-                keyIndex = searchStart;
-                if (searchLength <= 0)
-                {
-                    continue;
-                }
-
-                var window = text.Substring(searchStart, searchLength);
-                foreach (Match match in StoredValuePattern.Matches(window))
-                {
-                    var credentials = ParseStoredOAuthToken(match.Value, $"{OAuthTokenKey}#textscan");
-                    if (credentials is null)
-                    {
-                        continue;
-                    }
-
-                    merged = MergeCredentials(merged, credentials);
-                    if (!string.IsNullOrWhiteSpace(merged.AccessToken)
-                        && !string.IsNullOrWhiteSpace(merged.RefreshToken)
-                        && !string.IsNullOrWhiteSpace(merged.ClientId)
-                        && !string.IsNullOrWhiteSpace(merged.ClientSecret))
-                    {
-                        return merged;
-                    }
-                }
-            }
-
-            return merged;
-        }
-        catch
-        {
-            // Stored IDE credentials are a best-effort fallback. Never leak token data in errors.
-        }
-
-        return null;
-    }
-
-    private static AntigravityOAuthCredentials? LoadFromSqlite(string path)
-    {
-        try
-        {
-            var builder = new SqliteConnectionStringBuilder
-            {
-                DataSource = path,
-                Mode = SqliteOpenMode.ReadOnly,
-                Cache = SqliteCacheMode.Shared
-            };
-            using var connection = new SqliteConnection(builder.ToString());
-            connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = $"""
-                SELECT key, value
-                FROM ItemTable
-                WHERE key IN ({string.Join(", ", CredentialStateKeys.Select((_, index) => $"$key{index}"))})
-                ORDER BY CASE key
-                    WHEN $key0 THEN 0
-                    WHEN $key1 THEN 1
-                    WHEN $key2 THEN 2
-                    WHEN $key3 THEN 3
-                    ELSE 4
-                END
-                """;
-            for (var i = 0; i < CredentialStateKeys.Length; i++)
-            {
-                command.Parameters.AddWithValue($"$key{i}", CredentialStateKeys[i]);
-            }
-            using var reader = command.ExecuteReader();
-
-            AntigravityOAuthCredentials? merged = null;
-            while (reader.Read())
-            {
-                var key = reader.GetString(0);
-                var value = ReadSqliteValue(reader, 1);
-                var credentials = ParseStoredOAuthToken(value, key);
-                if (credentials is null)
-                {
-                    continue;
-                }
-
-                merged = MergeCredentials(merged, credentials);
-            }
-
-            return merged;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static AntigravityOAuthCredentials? ParseTokenTextFragments(byte[] data, int depth = 0)
-    {
-        if (depth > 8)
-        {
-            return null;
-        }
-
-        var merged = ParseTokenText(Encoding.Latin1.GetString(data));
-        foreach (var field in ParseProtobuf(data))
-        {
-            if (field.WireType != 2 || field.Bytes is null || field.Bytes.Length == 0)
-            {
-                continue;
-            }
-
-            var nested = ParseTokenTextFragments(field.Bytes, depth + 1);
-            if (nested is not null)
-            {
-                merged = MergeCredentials(merged, nested);
-            }
-
-            var decoded = TryDecodeBase64(field.Bytes);
-            if (decoded is null)
-            {
-                continue;
-            }
-
-            nested = ParseTokenTextFragments(decoded, depth + 1);
-            if (nested is not null)
-            {
-                merged = MergeCredentials(merged, nested);
-            }
-        }
-
-        return merged;
-    }
-
-    private static AntigravityOAuthCredentials? ParseTokenText(string text)
-    {
-        var accessToken = AccessTokenPattern.Match(text);
-        var refreshToken = RefreshTokenPattern.Match(text);
-        var clientId = ClientIdPattern.Match(text);
-        var clientSecret = ClientSecretPropertyPattern.Match(text);
-        return accessToken.Success || refreshToken.Success || clientId.Success || clientSecret.Success
-            ? new AntigravityOAuthCredentials(
-                accessToken.Success ? accessToken.Value : null,
-                refreshToken.Success ? refreshToken.Value : null,
-                clientId.Success ? clientId.Value : null,
-                clientSecret.Success ? clientSecret.Groups[1].Value : null,
-                null)
-            : null;
-    }
-
-    private static string ReadSqliteValue(SqliteDataReader reader, int ordinal)
-    {
-        return reader.GetFieldType(ordinal) == typeof(byte[])
-            ? Convert.ToBase64String((byte[])reader.GetValue(ordinal))
-            : reader.GetString(ordinal);
-    }
-
-    private static string ReadFileText(string path)
-    {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var memory = new MemoryStream();
-        stream.CopyTo(memory);
-        return Encoding.Latin1.GetString(memory.ToArray());
-    }
-
-    private static AntigravityOAuthCredentials MergeCredentials(
-        AntigravityOAuthCredentials? current,
-        AntigravityOAuthCredentials next)
-    {
-        if (current is null)
-        {
-            return next;
-        }
-
-        return current with
-        {
-            AccessToken = string.IsNullOrWhiteSpace(current.AccessToken) ? next.AccessToken : current.AccessToken,
-            RefreshToken = string.IsNullOrWhiteSpace(current.RefreshToken) ? next.RefreshToken : current.RefreshToken,
-            ClientId = string.IsNullOrWhiteSpace(current.ClientId) ? next.ClientId : current.ClientId,
-            ClientSecret = string.IsNullOrWhiteSpace(current.ClientSecret) ? next.ClientSecret : current.ClientSecret,
-            ExpiresAt = current.ExpiresAt ?? next.ExpiresAt
-        };
-    }
-
-    private static IReadOnlyList<string> DefaultCandidatePaths()
-    {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        if (string.IsNullOrWhiteSpace(appData))
-        {
-            return [];
-        }
-
-        var paths = new List<string>
-        {
-            Path.Combine(appData, "Antigravity IDE", "User", "globalStorage", "state.vscdb"),
-            Path.Combine(appData, "Antigravity", "User", "globalStorage", "state.vscdb")
-        };
-        foreach (var root in new[]
-        {
-            Path.Combine(appData, "Antigravity IDE", "User", "workspaceStorage"),
-            Path.Combine(appData, "Antigravity", "User", "workspaceStorage")
-        })
-        {
-            if (!Directory.Exists(root))
-            {
-                continue;
-            }
-
-            paths.AddRange(Directory.EnumerateFiles(root, "state.vscdb", SearchOption.AllDirectories));
-        }
-
-        return paths;
-    }
-
-    private static byte[]? TryDecodeBase64(byte[] bytes)
-    {
-        try
-        {
-            return Convert.FromBase64String(AddBase64Padding(Encoding.ASCII.GetString(bytes)));
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static string AddBase64Padding(string value)
-    {
-        var remainder = value.Length % 4;
-        return remainder == 0
-            ? value
-            : value.PadRight(value.Length + 4 - remainder, '=');
-    }
-
-    private static IEnumerable<ProtobufField> ParseProtobuf(byte[] data)
-    {
-        var offset = 0;
-        while (offset < data.Length)
-        {
-            if (!TryReadVarint(data, ref offset, out var tag))
-            {
-                yield break;
-            }
-
-            var wireType = (int)(tag & 0x7);
-            var number = (int)(tag >> 3);
-            if (wireType == 0)
-            {
-                if (!TryReadVarint(data, ref offset, out _))
-                {
-                    yield break;
-                }
-
-                yield return new ProtobufField(number, wireType, null);
-                continue;
-            }
-
-            if (wireType != 2 || !TryReadVarint(data, ref offset, out var length))
-            {
-                yield break;
-            }
-
-            if (length > int.MaxValue || offset + (int)length > data.Length)
-            {
-                yield break;
-            }
-
-            var bytes = data.AsSpan(offset, (int)length).ToArray();
-            offset += (int)length;
-            yield return new ProtobufField(number, wireType, bytes);
-        }
-    }
-
-    private static bool TryReadVarint(byte[] data, ref int offset, out ulong value)
-    {
-        value = 0;
-        var shift = 0;
-        while (offset < data.Length && shift < 64)
-        {
-            var b = data[offset++];
-            value |= (ulong)(b & 0x7f) << shift;
-            if ((b & 0x80) == 0)
-            {
-                return true;
-            }
-
-            shift += 7;
-        }
-
-        return false;
-    }
-
-    private sealed record ProtobufField(int Number, int WireType, byte[]? Bytes);
 }

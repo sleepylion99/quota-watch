@@ -128,29 +128,16 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </StackPanel>
-                                    <Button Grid.Column="2"
-                                            MinWidth="74"
-                                            Height="28"
-                                            Margin="8,0,0,0"
-                                            Padding="10,0"
-                                            Content="{Binding DataContext.CodexProfilesTitleText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            Click="ManageCodexProfilesButton_Click">
-                                        <Button.Style>
-                                            <Style TargetType="Button"
-                                                   BasedOn="{StaticResource {x:Type Button}}">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SupportsProfiles}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <Button Margin="0,4,0,0"
+                                    Height="30"
+                                    Padding="14,0"
+                                    HorizontalAlignment="Left"
+                                    Content="{Binding AccountsButtonText}"
+                                    Click="OpenAccountsWindowButton_Click" />
                         </StackPanel>
                     </Border>
 
@@ -161,88 +148,10 @@
                             BorderBrush="{DynamicResource Brush.Border.Default}"
                             BorderThickness="1"
                             CornerRadius="12">
-                        <StackPanel>
-                            <TextBlock Text="{Binding AntigravityOAuthTitleText}"
-                               Foreground="{DynamicResource Brush.Text.Primary}"
-                               FontWeight="SemiBold"
-                               FontSize="13" />
-                    <TextBlock Text="{Binding AntigravityOAuthDetailText}"
-                               Foreground="{DynamicResource Brush.Text.Secondary}"
-                               FontSize="11"
-                               Margin="0,3,0,10"
-                               TextWrapping="Wrap" />
-                    <Button Height="30"
-                            Margin="0,0,0,10"
-                            Padding="12,0"
-                            HorizontalAlignment="Left"
-                            Content="{Binding AntigravityOAuthGuideButtonText}"
-                            Click="OpenAntigravityOAuthGuideButton_Click" />
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="148" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding AntigravityOAuthClientIdLabelText}"
+                        <TextBlock Text="{Binding SettingsAntigravityMovedToAccountsText}"
                                    Foreground="{DynamicResource Brush.Text.Secondary}"
                                    FontSize="11"
-                                   VerticalAlignment="Center" />
-                        <TextBox x:Name="AntigravityOAuthClientIdBox"
-                                 Grid.Column="1"
-                                 Height="30"
-                                 Padding="8,4"
-                                 Background="{DynamicResource Brush.Surface.Window}"
-                                 BorderBrush="{DynamicResource Brush.Border.Default}"
-                                 Foreground="{DynamicResource Brush.Text.Primary}" />
-                    </Grid>
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="148" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding AntigravityOAuthClientSecretLabelText}"
-                                   Foreground="{DynamicResource Brush.Text.Secondary}"
-                                   FontSize="11"
-                                   VerticalAlignment="Center" />
-                        <PasswordBox x:Name="AntigravityOAuthClientSecretBox"
-                                     Grid.Column="1"
-                                     Height="30"
-                                     Padding="8,4"
-                                     Background="{DynamicResource Brush.Surface.Window}"
-                                     BorderBrush="{DynamicResource Brush.Border.Default}"
-                                     Foreground="{DynamicResource Brush.Text.Primary}" />
-                    </Grid>
-                    <Grid Margin="0,0,0,14">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Button MinWidth="82"
-                                Height="32"
-                                Padding="12,0"
-                                Content="{Binding AntigravityOAuthSaveButtonText}"
-                                Click="SaveAntigravityOAuthClientButton_Click" />
-                        <Button Grid.Column="1"
-                                MinWidth="82"
-                                Height="32"
-                                Margin="8,0,0,0"
-                                Padding="12,0"
-                                Content="{Binding AntigravityOAuthClearButtonText}"
-                                Click="ClearAntigravityOAuthClientButton_Click" />
-                        <TextBlock Grid.Column="2"
-                                   Text="{Binding AntigravityOAuthStatusText}"
-                                   Foreground="{DynamicResource Brush.Text.Secondary}"
-                                   FontSize="11"
-                                   Margin="12,0,0,0"
-                                   VerticalAlignment="Center"
                                    TextWrapping="Wrap" />
-                    </Grid>
-                            <TextBlock Text="{Binding AntigravityOAuthActiveClientText}"
-                               Foreground="{DynamicResource Brush.Text.Secondary}"
-                               FontSize="11"
-                               Margin="0,6,0,0"
-                               TextWrapping="Wrap" />
-                        </StackPanel>
                     </Border>
 
                     <Border x:Name="LanguageSettingsCard"
@@ -321,6 +230,17 @@
                               Foreground="{DynamicResource Brush.Text.Secondary}"
                               Margin="0,0,0,10"
                               Click="LimitWarningEnabledCheckBox_Click" />
+                    <CheckBox x:Name="InactiveAccountWarningCheckBox"
+                              IsChecked="{Binding IsInactiveAccountWarningEnabled, Mode=OneWay}"
+                              Content="{Binding InactiveAccountWarningText}"
+                              Foreground="{DynamicResource Brush.Text.Secondary}"
+                              Margin="0,0,0,4"
+                              Click="InactiveAccountWarningCheckBox_Click" />
+                    <TextBlock Text="{Binding InactiveAccountWarningHintText}"
+                               Foreground="{DynamicResource Brush.Text.Secondary}"
+                               FontSize="11"
+                               Margin="0,0,0,10"
+                               TextWrapping="Wrap" />
                     <TextBlock Text="{Binding LimitWarningThresholdText}"
                                Foreground="{DynamicResource Brush.Text.Secondary}"
                                FontSize="11"
@@ -520,6 +440,52 @@
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <Grid x:Name="UpdateAvailableOverlay"
+                  Grid.Row="0"
+                  Grid.RowSpan="3"
+                  Panel.ZIndex="30"
+                  Background="{DynamicResource Brush.Surface.ModalScrim}"
+                  Visibility="Collapsed">
+                <Border Width="390"
+                        Padding="22"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource Brush.Surface.Window}"
+                        BorderBrush="{DynamicResource Brush.Accent.Primary}"
+                        BorderThickness="1"
+                        CornerRadius="14">
+                    <StackPanel>
+                        <TextBlock Text="{Binding UpdateAvailableTitleText}"
+                                   Foreground="{DynamicResource Brush.Text.Primary}"
+                                   FontSize="18"
+                                   FontWeight="Bold" />
+                        <TextBlock Text="{Binding UpdateAvailableMessageText}"
+                                   Margin="0,9,0,22"
+                                   Foreground="{DynamicResource Brush.Text.Secondary}"
+                                   FontSize="12"
+                                   LineHeight="18"
+                                   TextWrapping="Wrap" />
+                        <StackPanel HorizontalAlignment="Right"
+                                    Orientation="Horizontal">
+                            <Button MinWidth="90"
+                                    Height="36"
+                                    Margin="0,0,8,0"
+                                    Padding="14,0"
+                                    Content="{Binding UpdateAvailableCancelButtonText}"
+                                    Click="CancelUpdateButton_Click" />
+                            <Button x:Name="ConfirmUpdateButton"
+                                    MinWidth="136"
+                                    Height="36"
+                                    Padding="14,0"
+                                    Background="{DynamicResource Brush.Accent.Primary}"
+                                    BorderBrush="{DynamicResource Brush.Accent.PrimaryHover}"
+                                    Content="{Binding UpdateAvailableConfirmButtonText}"
+                                    Click="ConfirmUpdateButton_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
 
             <!-- Unsaved changes confirmation overlay -->
             <Border x:Name="UnsavedChangesPanel"

@@ -16,7 +16,7 @@
 **Quota Watch**는 Codex, Claude Code, Google Antigravity의 사용 한도와 quota 상태를 한 화면에서 확인하는 Windows 데스크톱 앱입니다. 트레이 아이콘과 대시보드를 통해 현재 사용량, reset 시점, provider별 로그인 상태를 빠르게 확인할 수 있습니다.
 
 > [!IMPORTANT]
-> 현재 릴리즈 채널은 `v0.0.2 Public Beta`입니다. 이 앱은 각 provider의 로컬 로그인 정보와 비공식/내부 quota API를 사용하므로 provider 변경에 따라 일시적으로 조회가 실패할 수 있습니다. 인증 토큰은 로컬에서만 읽고, Quota Watch 서버로 전송하지 않습니다.
+> 현재 릴리즈 채널은 `v0.0.3 Public Beta`입니다. 이 앱은 각 provider의 로컬 로그인 정보와 비공식/내부 quota API를 사용하므로 provider 변경에 따라 일시적으로 조회가 실패할 수 있습니다. 인증 토큰은 로컬에서만 읽고, Quota Watch 서버로 전송하지 않습니다.
 
 ## 시스템 요구사항
 
@@ -87,6 +87,14 @@ Antigravity에서 Google 계정으로 로그인되어 있어야 합니다. Quota
 IDE를 켜지 않고도 만료된 토큰을 갱신하려면 설정 > Antigravity OAuth에서 본인 OAuth 클라이언트 ID·시크릿을 저장하세요. 이 값은 Google Cloud Console에서 OAuth 데스크톱 앱을 만들 때 발급되며, IDE에 연결하는 용도가 아니라 Antigravity의 Google 로그인으로 만들어진 갱신 토큰을 Quota Watch가 IDE 없이 새로 고칠 때 사용합니다. 저장된 값은 평문이 아니라 Windows DPAPI로 현재 사용자 계정에 암호화됩니다. 환경변수 `ANTIGRAVITY_OAUTH_CLIENT_ID` / `ANTIGRAVITY_OAUTH_CLIENT_SECRET`도 그대로 쓸 수 있습니다.
 
 저장된 인증 정보가 유효하면 Antigravity 또는 Antigravity IDE를 계속 실행해 둘 필요는 없습니다. 클라우드 한도를 직접 읽을 수 없으면 실행 중인 Antigravity IDE의 로컬 엔드포인트를 보조 경로로 시도합니다.
+
+## 로컬 보안 참고
+
+Quota Watch는 별도 서버를 운영하지 않으며 provider 인증 정보는 이 PC에서만 읽습니다. 다만 provider 호환성을 위해 저장 방식은 provider별로 다릅니다.
+
+- Claude Code 프로필 생성/연동은 Claude Code가 쓰는 `%USERPROFILE%\.claude*\.credentials.json` 형식을 유지합니다. 이 파일은 Claude Code와의 호환을 위해 평문 JSON 토큰 파일로 저장되므로, Windows 사용자 프로필과 백업/동기화 대상 폴더를 신뢰할 수 있게 관리하세요.
+- Antigravity OAuth 클라이언트 ID/시크릿을 설정 화면에서 저장하면 Windows DPAPI로 현재 사용자 계정에 암호화합니다. 환경변수로 직접 제공한 값은 Quota Watch가 별도로 저장하지 않습니다.
+- 앱에는 Antigravity 데스크톱 OAuth 갱신에 쓰는 번들 Google OAuth 클라이언트 값이 포함되어 있습니다. 데스크톱 OAuth 클라이언트 값은 배포 앱에 포함될 수 있는 공개 식별자에 가깝지만, 사용자가 직접 저장한 OAuth 클라이언트 값이 있으면 그 값을 우선 사용합니다.
 
 ## 문제가 생기면
 

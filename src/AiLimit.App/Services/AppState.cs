@@ -1,7 +1,11 @@
+using System.IO;
+using System.Net.Http;
 using System.Windows.Threading;
+using AiLimit.App.ViewModels.Accounts;
 using AiLimit.App.Windows;
 using AiLimit.Core.Domain;
 using AiLimit.Core.Providers;
+using AiLimit.Core.Providers.Accounts;
 using AiLimit.Core.Refresh;
 using AiLimit.Core.Settings;
 using AiLimit.Core.Storage;
@@ -12,7 +16,10 @@ public sealed class AppState
 {
     private readonly UsageRefreshService _refreshService = new();
     private readonly UpdateChecker _updateChecker = new();
+    private static readonly TimeSpan InactiveAccountPollInterval = TimeSpan.FromMinutes(30);
     private readonly DispatcherTimer _timer;
+    private readonly DispatcherTimer _inactiveTimer;
+    private bool _isPollingInactive;
     private readonly CancellationTokenSource _shutdown = new();
     private readonly ProviderAutoRefreshCoordinator _autoRefresh = new();
     private readonly SemaphoreSlim _settingsSaveGate = new(1, 1);
@@ -21,6 +28,7 @@ public sealed class AppState
     private WidgetWindow? _widgetWindow;
     private IReadOnlyList<UsageSnapshot> _latestSnapshots = [];
     private IReadOnlyList<UsageSample> _usageHistory = [];
+    private IReadOnlyList<UsageSnapshot> _inactiveAccountSnapshots = [];
     private AppLanguage? _previewLanguage;
 
     public ThemeService? ThemeService { get; set; }
@@ -36,6 +44,16 @@ public sealed class AppState
             Interval = TimeSpan.FromMinutes(5)
         };
         _timer.Tick += async (_, _) => await RefreshNextProviderAsync();
+
+        // Unlike _timer (started by ConfigureTimer after settings load), this fixed 30-minute timer
+        // can start immediately: the first tick is far enough out that settings are loaded by then,
+        // and RefreshInactiveAccountsAsync no-ops while the toggle is off (the default).
+        _inactiveTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = InactiveAccountPollInterval
+        };
+        _inactiveTimer.Tick += async (_, _) => await RefreshInactiveAccountsAsync();
+        _inactiveTimer.Start();
     }
 
     public event EventHandler? SnapshotChanged;
@@ -53,6 +71,12 @@ public sealed class AppState
     public UsageSnapshot? CurrentSnapshot => CurrentSnapshots.FirstOrDefault();
 
     public IReadOnlyList<UsageSnapshot> CurrentSnapshots { get; private set; } = [];
+
+    public IReadOnlyList<UsageSnapshot> InactiveAccountSnapshots => _inactiveAccountSnapshots;
+
+    /// <summary>Active-account snapshots plus polled inactive-account snapshots — the full set the limit-warning evaluator should consider.</summary>
+    public IReadOnlyList<UsageSnapshot> WarningEvaluationSnapshots =>
+        CurrentSnapshots.Concat(_inactiveAccountSnapshots).ToList();
 
     public IReadOnlyDictionary<UsageWindowKey, DepletionPrediction> CurrentPredictions { get; private set; } =
         new Dictionary<UsageWindowKey, DepletionPrediction>();
@@ -86,6 +110,45 @@ public sealed class AppState
         SnapshotChanged?.Invoke(this, EventArgs.Empty);
 
         _ = RefreshNowInBackgroundAsync();
+    }
+
+    public async Task RefreshInactiveAccountsAsync()
+    {
+        if (_isPollingInactive
+            || _shutdown.IsCancellationRequested
+            || !CurrentSettings.IsInactiveAccountWarningEnabled)
+        {
+            return;
+        }
+
+        _isPollingInactive = true;
+        try
+        {
+            var providers = new List<IUsageAccountProvider>
+            {
+                GetOrCreateClaudeAccountProvider(),
+                GetOrCreateCodexAccountProvider(),
+                GetOrCreateAntigravityAccountProvider()
+            };
+            var collector = new InactiveAccountUsageCollector(
+                providers,
+                log: message => AppLog.Write("InactiveAccounts", message));
+            var snapshots = await Task.Run(
+                () => collector.CollectAsync(_shutdown.Token),
+                _shutdown.Token);
+
+            _inactiveAccountSnapshots = FilterSnapshotsByEnabledProviders(snapshots, CurrentSettings);
+            SnapshotChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            AppLog.Write("InactiveAccounts", $"Inactive refresh failed. {ex.GetType().Name}: {ex.Message}");
+        }
+        finally
+        {
+            _isPollingInactive = false;
+        }
     }
 
     private async Task RefreshNowInBackgroundAsync()
@@ -367,6 +430,17 @@ public sealed class AppState
             "Save dashboard settings",
             _ => normalizedSettings,
             refreshAfterSave: true);
+        if (normalizedSettings.IsInactiveAccountWarningEnabled)
+        {
+            _ = RefreshInactiveAccountsAsync();
+        }
+        else if (_inactiveAccountSnapshots.Count > 0)
+        {
+            // Toggle turned off: drop any inactive-account snapshots so stale data can't keep
+            // contributing to warning evaluation until the next restart.
+            _inactiveAccountSnapshots = [];
+            SnapshotChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void CaptureLatestSnapshotsFromCurrentIfNeeded()
@@ -415,39 +489,6 @@ public sealed class AppState
         {
             await SnapshotStore.SaveAllAsync(_latestSnapshots, _shutdown.Token);
         }
-    }
-
-    public void SetSelectedCodexProfile(string profileId)
-    {
-        var normalized = CurrentSettings.Normalize();
-        if (normalized.SelectedCodexProfileId == profileId
-            || normalized.GetEffectiveCodexProfiles().All(profile => profile.Id != profileId))
-        {
-            return;
-        }
-
-        var refreshingSnapshot = new UsageSnapshot(
-            "codex",
-            "ChatGPT Codex",
-            DateTimeOffset.Now,
-            UsageSource.Agent,
-            UsageStatus.Refreshing,
-            []);
-        CurrentSnapshots = CurrentSnapshots
-            .Where(snapshot => snapshot.ProviderId != "codex")
-            .Append(refreshingSnapshot)
-            .ToList();
-        _latestSnapshots = _latestSnapshots
-            .Where(snapshot => snapshot.ProviderId != "codex")
-            .ToList();
-        CurrentPredictions = CurrentPredictions
-            .Where(item => item.Key.ProviderId != "codex")
-            .ToDictionary();
-
-        QueueSettingsUpdate(
-            "Save selected Codex profile",
-            settings => settings with { SelectedCodexProfileId = profileId },
-            refreshAfterSave: true);
     }
 
     public static IReadOnlyList<UsageSample> CreateUsageSamples(IEnumerable<UsageSnapshot> snapshots)
@@ -523,6 +564,214 @@ public sealed class AppState
             .ToList();
     }
 
+    // Shared services for Antigravity account-aware composition. Held statically
+    // because CreateUsageProvider is static; the same instance must be reachable
+    // from the future Accounts window (Task 11) so the dashboard tile and the
+    // window agree on which account is active.
+    private static AntigravityAccountProvider? _antigravityAccounts;
+    private static readonly AccountTrashStore SharedAccountTrashStore =
+        new(AccountTrashStore.DefaultPath());
+    private static readonly object _antigravityAccountsLock = new();
+    private static readonly HttpClient SharedHttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(15)
+    };
+
+    private static readonly HttpClient SharedLoginHttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(30)
+    };
+
+    private static AntigravityOAuthClientRegistry? _antigravityClientRegistry;
+    private static readonly object _antigravityClientRegistryLock = new();
+
+    internal static AntigravityOAuthClientRegistry GetOrCreateAntigravityClientRegistry()
+    {
+        if (_antigravityClientRegistry is { } existing)
+        {
+            return existing;
+        }
+
+        lock (_antigravityClientRegistryLock)
+        {
+            if (_antigravityClientRegistry is { } latest)
+            {
+                return latest;
+            }
+
+            _antigravityClientRegistry = new AntigravityOAuthClientRegistry(
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "AiLimit", "antigravity-oauth-clients.json"),
+                AntigravityOAuthClientStore.DefaultPath(),
+                new AntigravityAppBundleClientStore().Load() ?? AntigravityBundledOAuthClient.Config,
+                new DpapiSecretProtector(),
+                legacyLoader: () => OperatingSystem.IsWindows()
+                    ? new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath()).LoadLegacyPlaintext()
+                    : null);
+
+            return _antigravityClientRegistry;
+        }
+    }
+
+    internal static Func<CancellationToken, Task<AntigravityLoginResult>> BuildAntigravitySignIn()
+    {
+        var registry = GetOrCreateAntigravityClientRegistry();
+        var accounts = GetOrCreateAntigravityAccountProvider();
+        return ct => new AntigravityLoginFlow(
+            activeClient: () =>
+            {
+                var a = registry.GetActive();
+                return new AntigravityOAuthClientConfig(a?.ClientId, a?.ClientSecret);
+            },
+            listenerFactory: () => new LoopbackOAuthListener(),
+            openBrowser: url => System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }),
+            httpClient: SharedLoginHttpClient,
+            fetchEmail: (token, c) => new AntigravityUserInfoClient(SharedLoginHttpClient).FetchEmailAsync(token, c),
+            addAccount: (email, refresh) =>
+            {
+                try
+                {
+                    accounts.Add(email, email, refresh);
+                    return false; // newly added
+                }
+                catch (InvalidOperationException)
+                {
+                    return true; // duplicate refresh token — already added
+                }
+            }).SignInAsync(ct);
+    }
+
+    internal static ClaudeSignInViewModel BuildClaudeSignIn()
+    {
+        var flow = new ClaudeLoginFlow(
+            openBrowser: url => System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }),
+            credentials: new ClaudeOAuthCredentialStore(SharedLoginHttpClient),
+            writeProfile: cred => new ClaudeProfileWriter().WriteNewProfile(cred));
+        return new ClaudeSignInViewModel(flow);
+    }
+
+    internal static AntigravityAccountProvider GetOrCreateAntigravityAccountProvider()
+    {
+        if (_antigravityAccounts is { } existing)
+        {
+            return existing;
+        }
+
+        lock (_antigravityAccountsLock)
+        {
+            if (_antigravityAccounts is { } latest)
+            {
+                return latest;
+            }
+
+            var store = new AntigravityAccountStore(AntigravityAccountStore.DefaultPath());
+            var activeSelection = new AntigravityActiveSelection(AntigravityActiveSelection.DefaultPath());
+            var userInfo = new AntigravityUserInfoClient(SharedHttpClient);
+
+            _antigravityAccounts = new AntigravityAccountProvider(
+                store: store,
+                activeSelection: activeSelection,
+                userInfo: userInfo,
+                keychainRawBlobReader: AntigravityWindowsCredentialStore.ReadRawBlob,
+                clientResolver: () =>
+                {
+                    var creds = new AntigravityOAuthCredentials(null, null, null, null, null);
+                    var id = AntigravityOAuthCredentialStore.ResolveOAuthClientId(creds);
+                    var secret = AntigravityOAuthCredentialStore.TryResolveOAuthClientSecret(creds);
+                    return new AntigravityOAuthClientConfig(id, secret);
+                },
+                httpClient: SharedHttpClient,
+                trashStore: SharedAccountTrashStore);
+
+            return _antigravityAccounts;
+        }
+    }
+
+    private static CodexAccountProvider? _codexAccounts;
+
+    internal static CodexAccountProvider GetOrCreateCodexAccountProvider()
+    {
+        if (_codexAccounts is not null)
+        {
+            return _codexAccounts;
+        }
+
+        var scanner = new CodexProfileScanner();
+        var selection = new CodexActiveSelection(CodexActiveSelection.DefaultPath());
+        var binDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "AiLimit", "bin");
+        var linker = new CodexProfileLinker(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            isElevated: IsProcessElevated,
+            symlinks: new WindowsSymlinkCreator(),
+            binDir: binDir);
+
+        _codexAccounts = new CodexAccountProvider(
+            scanner,
+            selection,
+            linker,
+            poll: async (authPath, ct) =>
+            {
+                var snapshot = await new CodexUsageProvider(CodexUsageMode.Auto, authPath)
+                    .RefreshAsync(ct).ConfigureAwait(false);
+                return ToAccountSnapshot(snapshot);
+            },
+            trashStore: SharedAccountTrashStore,
+            pollUsage: (authPath, ct) => new CodexUsageProvider(CodexUsageMode.Auto, authPath).RefreshAsync(ct));
+        return _codexAccounts;
+    }
+
+    private static ClaudeAccountProvider? _claudeAccounts;
+
+    internal static ClaudeAccountProvider GetOrCreateClaudeAccountProvider()
+    {
+        if (_claudeAccounts is not null)
+        {
+            return _claudeAccounts;
+        }
+
+        var scanner = new ClaudeProfileScanner();
+        var selection = new ClaudeActiveSelection(ClaudeActiveSelection.DefaultPath());
+        var profileUsagePoller = new ClaudeProfileUsagePoller(SharedLoginHttpClient);
+
+        _claudeAccounts = new ClaudeAccountProvider(
+            scanner,
+            selection,
+            poll: profileUsagePoller.PollAsync,
+            trashStore: SharedAccountTrashStore,
+            pollUsage: profileUsagePoller.PollUsageAsync);
+        return _claudeAccounts;
+    }
+
+    private static bool IsProcessElevated()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
+        using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+        return new System.Security.Principal.WindowsPrincipal(identity)
+            .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+    }
+
+    private static AccountSnapshot ToAccountSnapshot(UsageSnapshot snapshot)
+    {
+        if (snapshot.Status == UsageStatus.Failed)
+        {
+            return AccountSnapshot.Failure(snapshot.LastError ?? "Codex poll failed.");
+        }
+
+        var buckets = snapshot.Windows
+            .Select(w => new QuotaBucket(w.Label, w.PercentRemaining, w.ResetAt))
+            .ToList()
+            .AsReadOnly();
+        return AccountSnapshot.Success(buckets, AccountPlan.Unknown);
+    }
+
     private static IUsageProvider CreateUsageProvider(
         ProviderCatalogItem provider,
         ProviderSetting setting,
@@ -530,8 +779,9 @@ public sealed class AppState
     {
         if (provider.Id == "codex")
         {
-            var profile = appSettings.GetSelectedCodexProfile();
-            return new CodexUsageProvider(ToCodexUsageMode(setting.Mode), profile.AuthPath);
+            var codexAccounts = GetOrCreateCodexAccountProvider();
+            var authPath = codexAccounts.ResolveActiveAuthPath();
+            return new CodexUsageProvider(ToCodexUsageMode(setting.Mode), authPath!);
         }
 
         if (provider.Id == "claude")
@@ -541,7 +791,11 @@ public sealed class AppState
 
         if (provider.Id == "gemini-pro")
         {
-            return new AntigravityUsageProvider();
+            var accounts = GetOrCreateAntigravityAccountProvider();
+            return AntigravityUsageProvider.CreateWithCredentialResolver(
+                credentialResolver: () => accounts.ResolveActiveCredentials(),
+                httpClient: SharedHttpClient,
+                allowLocalDetectionResolver: () => accounts.GetActiveId() is null);
         }
 
         return new MockUsageProvider(
@@ -565,6 +819,7 @@ public sealed class AppState
     {
         _shutdown.Cancel();
         _timer.Stop();
+        _inactiveTimer.Stop();
         _widgetWindow?.Close();
         _dashboardWindow?.Close();
         System.Windows.Application.Current.Shutdown();

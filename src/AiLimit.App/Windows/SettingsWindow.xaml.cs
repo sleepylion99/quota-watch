@@ -1,7 +1,10 @@
 using System.Windows;
+using AiLimit.App.Localization;
 using AiLimit.App.Services;
 using AiLimit.App.ViewModels;
+using AiLimit.App.ViewModels.Accounts;
 using AiLimit.Core.Providers;
+using AiLimit.Core.Providers.Accounts;
 using AiLimit.Core.Settings;
 
 namespace AiLimit.App.Windows;
@@ -13,12 +16,14 @@ public partial class SettingsWindow : Window
     private HashSet<string> _pendingEnabledProviderIds = new(StringComparer.Ordinal);
     private AppLanguage _pendingLanguage;
     private bool _pendingLimitWarningEnabled;
+    private bool _pendingInactiveAccountWarning;
     private List<ProviderLimitWarningSetting> _pendingLimitWarningSettings = [];
     private HashSet<string> _originalEnabledProviderIds = new(StringComparer.Ordinal);
     private AppLanguage _originalLanguage;
     private bool _originalLimitWarningEnabled;
+    private bool _originalInactiveAccountWarning;
     private List<ProviderLimitWarningSetting> _originalLimitWarningSettings = [];
-    private CodexProfilesWindow? _codexProfilesWindow;
+    private AccountsWindow? _accountsWindow;
     private bool _hasPendingSettingsChanges;
     private bool HasPendingSettingsChanges
     {
@@ -33,7 +38,8 @@ public partial class SettingsWindow : Window
     private bool _isUpdatingSettingsView;
     private bool _hasStartedInitialUpdateCheck;
     private bool _isCheckingForUpdates;
-    private AntigravityOAuthStatusKind _currentOAuthStatusKind;
+    private readonly UpdateReleaseLauncher _updateReleaseLauncher = new UpdateReleaseLauncher();
+    private string? _pendingUpdateReleaseUrl;
 
     public SettingsWindow(AppState state)
     {
@@ -47,7 +53,6 @@ public partial class SettingsWindow : Window
         try
         {
             UpdateViewModel();
-            LoadAntigravityOAuthClientSettings();
         }
         finally
         {
@@ -105,20 +110,51 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void ManageCodexProfilesButton_Click(object sender, RoutedEventArgs e)
+    private void OpenAccountsWindowButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_codexProfilesWindow is { IsVisible: true })
+        if (_accountsWindow is { IsVisible: true })
         {
-            _codexProfilesWindow.Activate();
+            _accountsWindow.Activate();
             return;
         }
 
-        _codexProfilesWindow = new CodexProfilesWindow(_state)
+        var providers = new IAccountProvider[]
+        {
+            AppState.GetOrCreateCodexAccountProvider(),
+            AppState.GetOrCreateClaudeAccountProvider(),
+            AppState.GetOrCreateAntigravityAccountProvider()
+        };
+
+        var registry = AppState.GetOrCreateAntigravityClientRegistry();
+        var vm = new AccountsWindowViewModel(
+            providers,
+            _state.DisplayLanguage,
+            antigravitySignIn: AppState.BuildAntigravitySignIn(),
+            antigravityOAuthClientPanel: new AntigravityOAuthClientPanelViewModel(registry),
+            claudeSignIn: AppState.BuildClaudeSignIn());
+        vm.ActiveAccountChanged += async (_, _) =>
+        {
+            try
+            {
+                await _state.RefreshNowAsync();
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                AppLog.Write(
+                    AppLogLevel.Warning,
+                    "Settings",
+                    $"Accounts window refresh after switch failed. {ex.GetType().Name}: {ex.Message}");
+            }
+        };
+
+        _accountsWindow = new AccountsWindow(vm)
         {
             Owner = this
         };
-        _codexProfilesWindow.Closed += (_, _) => _codexProfilesWindow = null;
-        _codexProfilesWindow.Show();
+        _accountsWindow.Closed += (_, _) => _accountsWindow = null;
+
+        // Tabs auto-load when they become visible (see AccountsTable); no explicit reload needed.
+        _accountsWindow.Show();
     }
 
     private void LanguageOptionButton_Click(object sender, RoutedEventArgs e)
@@ -147,6 +183,21 @@ public partial class SettingsWindow : Window
         if (sender is System.Windows.Controls.CheckBox { IsChecked: bool isChecked })
         {
             _pendingLimitWarningEnabled = isChecked;
+            RecomputePendingSettingsChanges();
+            UpdatePendingSettingsPreview();
+        }
+    }
+
+    private void InactiveAccountWarningCheckBox_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingSettingsView)
+        {
+            return;
+        }
+
+        if (sender is System.Windows.Controls.CheckBox { IsChecked: bool isChecked })
+        {
+            _pendingInactiveAccountWarning = isChecked;
             RecomputePendingSettingsChanges();
             UpdatePendingSettingsPreview();
         }
@@ -256,6 +307,7 @@ public partial class SettingsWindow : Window
         _originalEnabledProviderIds = new HashSet<string>(_pendingEnabledProviderIds, StringComparer.Ordinal);
         _originalLanguage = _pendingLanguage;
         _originalLimitWarningEnabled = _pendingLimitWarningEnabled;
+        _originalInactiveAccountWarning = _pendingInactiveAccountWarning;
         _originalLimitWarningSettings = _pendingLimitWarningSettings.Select(setting => setting).ToList();
         HasPendingSettingsChanges = false;
         Close();
@@ -280,56 +332,6 @@ public partial class SettingsWindow : Window
         base.OnClosed(e);
     }
 
-    private void SaveAntigravityOAuthClientButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var clientId = AntigravityOAuthClientIdBox.Text.Trim();
-            var clientSecret = AntigravityOAuthClientSecretBox.Password.Trim();
-            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-            {
-                SetOAuthStatus(AntigravityOAuthStatusKind.MissingInput);
-                return;
-            }
-
-            new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath())
-                .Save(clientId, clientSecret);
-            AntigravityOAuthClientSecretBox.Clear();
-            SetOAuthStatus(AntigravityOAuthStatusKind.Saved);
-            AppLog.Write("Settings", "Antigravity OAuth client values saved.");
-        }
-        catch (Exception ex)
-        {
-            AppLog.Write(AppLogLevel.Warning, "Settings", $"Antigravity OAuth client save failed. {ex.GetType().Name}: {ex.Message}");
-            SetOAuthStatus(AntigravityOAuthStatusKind.SaveFailed);
-        }
-    }
-
-    private void ClearAntigravityOAuthClientButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath()).Clear();
-            AntigravityOAuthClientIdBox.Clear();
-            AntigravityOAuthClientSecretBox.Clear();
-            SetOAuthStatus(AntigravityOAuthStatusKind.Cleared);
-            AppLog.Write("Settings", "Antigravity OAuth client values cleared.");
-        }
-        catch (Exception ex)
-        {
-            AppLog.Write(AppLogLevel.Warning, "Settings", $"Antigravity OAuth client clear failed. {ex.GetType().Name}: {ex.Message}");
-            SetOAuthStatus(AntigravityOAuthStatusKind.ClearFailed);
-        }
-    }
-
-    private void OpenAntigravityOAuthGuideButton_Click(object sender, RoutedEventArgs e)
-    {
-        DashboardWindow.TryOpenAntigravityOAuthGuide(
-            new AntigravityOAuthGuide(),
-            AppLanguageResolver.Resolve(_pendingLanguage),
-            _viewModel);
-    }
-
     private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
     {
         await CheckForUpdatesAsync();
@@ -350,35 +352,72 @@ public partial class SettingsWindow : Window
 
     private async Task CheckForUpdatesAsync()
     {
-        if (_isCheckingForUpdates)
+        if (_isCheckingForUpdates || UpdateAvailableOverlay.Visibility != Visibility.Collapsed)
         {
             return;
         }
 
         _isCheckingForUpdates = true;
-        _viewModel.SetUpdateCheckStatus("업데이트 확인 중...");
+        var language = _state.DisplayLanguage;
+        _viewModel.SetUpdateCheckStatus(AppText.Get(language, AppStringKeys.UpdateCheckStatusChecking));
         try
         {
             var result = await _state.CheckForUpdatesAsync();
             var status = result.IsUpdateAvailable
-                ? $"새 버전 {result.LatestVersion} 사용 가능: {result.ReleaseUrl}"
-                : $"최신 버전입니다. 현재 버전 {result.CurrentVersion}";
+                ? AppText.Get(language, AppStringKeys.UpdateCheckStatusAvailable, result.LatestVersion, result.ReleaseUrl ?? string.Empty)
+                : AppText.Get(language, AppStringKeys.UpdateCheckStatusUpToDate, result.CurrentVersion);
             _viewModel.SetUpdateCheckStatus(status);
+
+            if (result.IsUpdateAvailable)
+            {
+                _pendingUpdateReleaseUrl = result.ReleaseUrl;
+                _viewModel.SetUpdateAvailablePrompt(result.LatestVersion);
+                UpdateAvailableOverlay.Visibility = Visibility.Visible;
+                ConfirmUpdateButton.Focus();
+            }
         }
         catch (UpdateCheckException ex)
         {
             AppLog.Write(AppLogLevel.Warning, "Settings", $"Update check failed. {ex.GetType().Name}: {ex.Message}");
-            _viewModel.SetUpdateCheckStatus(ex.UserMessage);
+            _viewModel.SetUpdateCheckStatus(AppText.Get(language, AppStringKeys.UpdateCheckReleaseNotAccessible));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             AppLog.Write(AppLogLevel.Warning, "Settings", $"Update check failed. {ex.GetType().Name}: {ex.Message}");
-            _viewModel.SetUpdateCheckStatus("업데이트 확인에 실패했습니다. 네트워크 상태를 확인하세요.");
+            _viewModel.SetUpdateCheckStatus(AppText.Get(language, AppStringKeys.UpdateCheckStatusFailed));
         }
         finally
         {
             _isCheckingForUpdates = false;
         }
+    }
+
+    private void ConfirmUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateAvailableOverlay.Visibility = Visibility.Collapsed;
+
+        try
+        {
+            _updateReleaseLauncher.Open(_pendingUpdateReleaseUrl);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Write(
+                AppLogLevel.Warning,
+                "Settings",
+                $"Update release page open failed. {ex.GetType().Name}: {ex.Message}");
+            _viewModel.SetUpdateCheckStatus(_viewModel.UpdateReleaseOpenFailedText);
+        }
+        finally
+        {
+            _pendingUpdateReleaseUrl = null;
+        }
+    }
+
+    private void CancelUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateAvailableOverlay.Visibility = Visibility.Collapsed;
+        _pendingUpdateReleaseUrl = null;
     }
 
     private void CapturePendingSettingsFromState()
@@ -389,11 +428,13 @@ public partial class SettingsWindow : Window
             .ToHashSet(StringComparer.Ordinal);
         _pendingLanguage = _state.CurrentSettings.Language;
         _pendingLimitWarningEnabled = _state.CurrentSettings.IsLimitWarningEnabled;
+        _pendingInactiveAccountWarning = _state.CurrentSettings.IsInactiveAccountWarningEnabled;
         _pendingLimitWarningSettings = (_state.CurrentSettings.Normalize().LimitWarningSettings ?? []).ToList();
 
         _originalEnabledProviderIds = new HashSet<string>(_pendingEnabledProviderIds, StringComparer.Ordinal);
         _originalLanguage = _pendingLanguage;
         _originalLimitWarningEnabled = _pendingLimitWarningEnabled;
+        _originalInactiveAccountWarning = _pendingInactiveAccountWarning;
         _originalLimitWarningSettings = _pendingLimitWarningSettings.Select(setting => setting).ToList();
 
         HasPendingSettingsChanges = false;
@@ -404,6 +445,7 @@ public partial class SettingsWindow : Window
         HasPendingSettingsChanges = !_pendingEnabledProviderIds.SetEquals(_originalEnabledProviderIds)
             || _pendingLanguage != _originalLanguage
             || _pendingLimitWarningEnabled != _originalLimitWarningEnabled
+            || _pendingInactiveAccountWarning != _originalInactiveAccountWarning
             || !LimitWarningSettingsEqual(_pendingLimitWarningSettings, _originalLimitWarningSettings);
     }
 
@@ -447,11 +489,8 @@ public partial class SettingsWindow : Window
                 _state.CurrentSettings.ThemeMode,
                 _state.CurrentSettings.DashboardOpacity,
                 _state.CurrentSettings.WidgetOpacity,
-                codexProfiles: _state.CurrentSettings.GetEffectiveCodexProfiles(),
-                selectedCodexProfileId: _state.CurrentSettings.SelectedCodexProfileId);
+                isInactiveAccountWarningEnabled: _pendingInactiveAccountWarning);
 
-            // Issue 2: re-localize OAuth status with pending language
-            _viewModel.SetAntigravityOAuthStatus(AntigravityOAuthStatus(_currentOAuthStatusKind));
         }
         finally
         {
@@ -476,6 +515,7 @@ public partial class SettingsWindow : Window
         {
             Language = _pendingLanguage,
             IsLimitWarningEnabled = _pendingLimitWarningEnabled,
+            IsInactiveAccountWarningEnabled = _pendingInactiveAccountWarning,
             LimitWarningThresholdPercent = _pendingLimitWarningSettings
                 .First(setting => setting.ProviderId == "codex")
                 .ThresholdPercent,
@@ -483,38 +523,6 @@ public partial class SettingsWindow : Window
             Providers = PendingProviderSettings()
         };
         _state.SaveSettingsFromDashboard(updatedSettings);
-    }
-
-    private void LoadAntigravityOAuthClientSettings()
-    {
-        try
-        {
-            var config = new AntigravityOAuthClientStore(AntigravityOAuthClientStore.DefaultPath()).Load();
-            AntigravityOAuthClientIdBox.Text = config.ClientId ?? string.Empty;
-            AntigravityOAuthClientSecretBox.Clear();
-            var kind = !string.IsNullOrWhiteSpace(config.ClientId) && !string.IsNullOrWhiteSpace(config.ClientSecret)
-                ? AntigravityOAuthStatusKind.SavedExists
-                : AntigravityOAuthStatusKind.None;
-            SetOAuthStatus(kind);
-        }
-        catch (Exception ex)
-        {
-            AppLog.Write(AppLogLevel.Warning, "Settings", $"Antigravity OAuth client load failed. {ex.GetType().Name}: {ex.Message}");
-            SetOAuthStatus(AntigravityOAuthStatusKind.LoadFailed);
-        }
-    }
-
-    private void SetOAuthStatus(AntigravityOAuthStatusKind kind)
-    {
-        _currentOAuthStatusKind = kind;
-        _viewModel.SetAntigravityOAuthStatus(AntigravityOAuthStatus(kind));
-    }
-
-    private string AntigravityOAuthStatus(AntigravityOAuthStatusKind status)
-    {
-        return UsageViewModel.AntigravityOAuthStatusMessage(
-            AppLanguageResolver.Resolve(_pendingLanguage),
-            status);
     }
 
     private void UpdateViewModel()
@@ -533,7 +541,6 @@ public partial class SettingsWindow : Window
             _state.CurrentSettings.ThemeMode,
             _state.CurrentSettings.DashboardOpacity,
             _state.CurrentSettings.WidgetOpacity,
-            codexProfiles: _state.CurrentSettings.GetEffectiveCodexProfiles(),
-            selectedCodexProfileId: _state.CurrentSettings.SelectedCodexProfileId);
+            isInactiveAccountWarningEnabled: _state.CurrentSettings.IsInactiveAccountWarningEnabled);
     }
 }

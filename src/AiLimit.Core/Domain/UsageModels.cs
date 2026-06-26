@@ -38,7 +38,12 @@ public sealed record UsageSnapshot(
     string? SourceChannel = null,
     string? CloudFailureSummary = null,
     string? IdeFailureSummary = null,
-    string? OAuthClientOrigin = null);
+    string? OAuthClientOrigin = null,
+    ResetCreditSummary? ResetCredits = null);
+
+public sealed record ResetCreditSummary(
+    int AvailableCount,
+    DateTimeOffset? NearestExpiry);
 
 public sealed record ProviderDescriptor(
     string Id,

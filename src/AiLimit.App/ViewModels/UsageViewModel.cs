@@ -14,6 +14,8 @@ namespace AiLimit.App.ViewModels;
 
 public sealed class UsageViewModel : INotifyPropertyChanged
 {
+    private AppLanguage _displayLanguage = AppLanguage.English;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string HeaderTitle { get; private set; } = "Quota Watch";
@@ -51,13 +53,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     public string PinWindowTooltipText { get; private set; } = "Keep window on top";
     public string ModelSettingsButtonText { get; private set; } = "Model Settings";
     public string ModelSettingsDetailText { get; private set; } = "Choose which providers appear on the dashboard.";
-    public string CodexProfilesTitleText { get; private set; } = "Codex profiles";
-    public string CodexProfilesDetailText { get; private set; } = "Register auth.json files for other Codex accounts.";
-    public string CodexProfileNameLabelText { get; private set; } = "Profile name";
-    public string CodexProfilePathLabelText { get; private set; } = "auth.json";
-    public string CodexProfileBrowseButtonText { get; private set; } = "Browse";
-    public string CodexProfileAddButtonText { get; private set; } = "Add profile";
-    public string CodexProfileRemoveButtonText { get; private set; } = "Remove";
+    public string AccountsButtonText { get; private set; } = "Accounts";
     public string AntigravityOAuthTitleText { get; private set; } = "Antigravity OAuth";
     public string AntigravityOAuthDetailText { get; private set; } = "Optional setup for checking Antigravity after the IDE is closed. Values are securely encrypted on this device.";
     public string AntigravityOAuthClientIdLabelText { get; private set; } = "OAuth client ID";
@@ -67,6 +63,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     public string AntigravityOAuthGuideButtonText { get; private set; } = "View setup guide";
     public string AntigravityOAuthStatusText { get; private set; } = "No saved client values.";
     public string AntigravityOAuthActiveClientText { get; private set; } = string.Empty;
+    public string SettingsAntigravityMovedToAccountsText { get; private set; } = "Antigravity sign-in and OAuth client are now managed in the Account Manager.";
     public string LanguageSettingsTitleText { get; private set; } = "Language";
     public string LanguageSettingsDetailText { get; private set; } = "Follow the system language by default, or choose a specific dashboard language.";
     public string ThemeSettingsTitleText { get; private set; } = "Theme";
@@ -81,17 +78,24 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     public string LimitWarningEnabledText { get; private set; } = "Enable limit alerts";
     public string LimitWarningThresholdText { get; private set; } = "Alert threshold";
     public string CustomThresholdLabelText { get; private set; } = "Custom:";
+    public string InactiveAccountWarningText { get; private set; } = "Warn for inactive accounts too";
+    public string InactiveAccountWarningHintText { get; private set; } = "Polls other profiles in the background (every 30 min) so you get depletion warnings without switching accounts.";
+    public bool IsInactiveAccountWarningEnabled { get; private set; } = false;
     public string UpdateCheckTitleText { get; private set; } = "Updates";
     public string UpdateCheckDetailText { get; private set; } = "Check whether a newer release is available.";
     public string CheckForUpdatesButtonText { get; private set; } = "Check for Updates";
     public string UpdateCheckStatusText { get; private set; } = "Not checked yet.";
+    public string UpdateAvailableTitleText { get; private set; } = "Update available";
+    public string UpdateAvailableMessageText { get; private set; } = string.Empty;
+    public string UpdateAvailableConfirmButtonText { get; private set; } = "Open update page";
+    public string UpdateAvailableCancelButtonText { get; private set; } = "Cancel";
+    public string UpdateReleaseOpenFailedText { get; private set; } = "Could not open the update page.";
     public string DiagnosticLogTitleText { get; private set; } = "Diagnostic log";
     public string DiagnosticLogDetailText { get; private set; } = "Found a bug? Copy this log and send it to the developer.";
     public string TrackProviderLabel { get; private set; } = "Track";
 
     public ObservableCollection<ProviderUsageItemViewModel> Providers { get; } = [];
     public ObservableCollection<ProviderSettingItemViewModel> ProviderSettings { get; } = [];
-    public ObservableCollection<CodexProfileSettingItemViewModel> CodexProfileSettings { get; } = [];
     public ObservableCollection<LanguageOptionViewModel> LanguageOptions { get; } = [];
     public ObservableCollection<ThemeOptionViewModel> ThemeOptions { get; } = [];
     public ObservableCollection<LimitWarningThresholdOptionViewModel> LimitWarningThresholdOptions { get; } = [];
@@ -113,10 +117,10 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         double dashboardOpacity = 1.0,
         double widgetOpacity = 1.0,
         IReadOnlyDictionary<UsageWindowKey, DepletionPrediction>? predictions = null,
-        IReadOnlyList<CodexProfileSetting>? codexProfiles = null,
-        string? selectedCodexProfileId = null)
+        bool isInactiveAccountWarningEnabled = false)
     {
         var displayLanguage = AppLanguageResolver.Resolve(language);
+        _displayLanguage = displayLanguage;
         ApplyLanguage(displayLanguage);
         UpdateLanguageOptions(language, displayLanguage);
         UpdateThemeOptions(themeMode, displayLanguage);
@@ -125,9 +129,9 @@ public sealed class UsageViewModel : INotifyPropertyChanged
             isLimitWarningEnabled,
             limitWarningThresholdPercent,
             limitWarningSettings,
-            displayLanguage);
+            displayLanguage,
+            isInactiveAccountWarningEnabled);
         UpdateProviderSettings(providerSettings ?? [], displayLanguage);
-        UpdateCodexProfileSettings(codexProfiles ?? [], displayLanguage);
         UpdateAntigravityOAuthActiveClient(antigravityActiveClientOrigin, displayLanguage);
 
         Providers.Clear();
@@ -149,9 +153,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
                 displayLanguage,
                 setting,
                 autoRefreshStatus,
-                predictions,
-                codexProfiles,
-                selectedCodexProfileId));
+                predictions));
         }
 
         if (snapshots.Count == 0)
@@ -211,31 +213,6 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         }
     }
 
-    private void UpdateCodexProfileSettings(
-        IReadOnlyList<CodexProfileSetting> profiles,
-        AppLanguage language)
-    {
-        CodexProfileSettings.Clear();
-        foreach (var profile in profiles)
-        {
-            var badge = profile.IsDefault
-                ? language switch
-                {
-                    AppLanguage.Korean => "현재 계정",
-                    AppLanguage.Japanese => "現在のアカウント",
-                    AppLanguage.Chinese => "当前帐户",
-                    _ => "Current account"
-                }
-                : string.Empty;
-            CodexProfileSettings.Add(new CodexProfileSettingItemViewModel(
-                profile.Id,
-                profile.DisplayName,
-                profile.AuthPath,
-                profile.IsDefault,
-                badge));
-        }
-    }
-
     private void UpdateLanguageOptions(AppLanguage selectedLanguage, AppLanguage displayLanguage)
     {
         var supported = AppLanguageCatalog.SupportedLanguages;
@@ -291,9 +268,11 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         bool isEnabled,
         int selectedThresholdPercent,
         IReadOnlyList<ProviderLimitWarningSetting>? providerSettings,
-        AppLanguage displayLanguage)
+        AppLanguage displayLanguage,
+        bool isInactiveAccountWarningEnabled = false)
     {
         IsLimitWarningEnabled = isEnabled;
+        IsInactiveAccountWarningEnabled = isInactiveAccountWarningEnabled;
         LimitWarningProviderSettings.Clear();
         var settingsById = (providerSettings ?? [])
             .GroupBy(setting => setting.ProviderId, StringComparer.Ordinal)
@@ -371,49 +350,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         PinWindowTooltipText = AppText.Get(language, AppStringKeys.PinWindowTooltip);
         ModelSettingsButtonText = AppText.Get(language, AppStringKeys.ModelSettingsButtonText);
         ModelSettingsDetailText = AppText.Get(language, AppStringKeys.ModelSettingsDetailText);
-        CodexProfilesTitleText = language switch
-        {
-            AppLanguage.Korean => "Codex 프로필",
-            AppLanguage.Japanese => "Codex プロファイル",
-            AppLanguage.Chinese => "Codex 配置文件",
-            _ => "Codex profiles"
-        };
-        CodexProfilesDetailText = language switch
-        {
-            AppLanguage.Korean => "다른 Codex 계정의 auth.json을 등록합니다. 토큰은 별도로 저장하지 않습니다.",
-            AppLanguage.Japanese => "別の Codex アカウントの auth.json を登録します。トークンは別途保存しません。",
-            AppLanguage.Chinese => "注册其他 Codex 帐户的 auth.json。不会另行保存令牌。",
-            _ => "Register auth.json files for other Codex accounts. Tokens are not copied."
-        };
-        CodexProfileNameLabelText = language switch
-        {
-            AppLanguage.Korean => "프로필 이름",
-            AppLanguage.Japanese => "プロファイル名",
-            AppLanguage.Chinese => "配置文件名称",
-            _ => "Profile name"
-        };
-        CodexProfilePathLabelText = "auth.json";
-        CodexProfileBrowseButtonText = language switch
-        {
-            AppLanguage.Korean => "찾아보기",
-            AppLanguage.Japanese => "参照",
-            AppLanguage.Chinese => "浏览",
-            _ => "Browse"
-        };
-        CodexProfileAddButtonText = language switch
-        {
-            AppLanguage.Korean => "프로필 추가",
-            AppLanguage.Japanese => "プロファイルを追加",
-            AppLanguage.Chinese => "添加配置文件",
-            _ => "Add profile"
-        };
-        CodexProfileRemoveButtonText = language switch
-        {
-            AppLanguage.Korean => "삭제",
-            AppLanguage.Japanese => "削除",
-            AppLanguage.Chinese => "删除",
-            _ => "Remove"
-        };
+        AccountsButtonText = AppText.Get(language, AppStringKeys.AccountsManagerButtonText);
         LanguageSettingsTitleText = AppText.Get(language, AppStringKeys.LanguageSettingsTitleText);
         LanguageSettingsDetailText = AppText.Get(language, AppStringKeys.LanguageSettingsDetailText);
         ThemeSettingsTitleText = AppText.Get(language, AppStringKeys.ThemeSettingsTitleText);
@@ -424,9 +361,15 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         LimitWarningEnabledText = AppText.Get(language, AppStringKeys.LimitWarningEnabledText);
         LimitWarningThresholdText = AppText.Get(language, AppStringKeys.LimitWarningThresholdText);
         CustomThresholdLabelText = AppText.Get(language, AppStringKeys.LimitWarningCustomThresholdLabel);
+        InactiveAccountWarningText = AppText.Get(language, AppStringKeys.SettingsInactiveAccountWarning);
+        InactiveAccountWarningHintText = AppText.Get(language, AppStringKeys.SettingsInactiveAccountWarningHint);
         UpdateCheckTitleText = AppText.Get(language, AppStringKeys.UpdateCheckTitleText);
         UpdateCheckDetailText = AppText.Get(language, AppStringKeys.UpdateCheckDetailText);
         CheckForUpdatesButtonText = AppText.Get(language, AppStringKeys.CheckForUpdatesButtonText);
+        UpdateAvailableTitleText = AppText.Get(language, AppStringKeys.UpdateAvailableTitleText);
+        UpdateAvailableConfirmButtonText = AppText.Get(language, AppStringKeys.UpdateAvailableConfirmButtonText);
+        UpdateAvailableCancelButtonText = AppText.Get(language, AppStringKeys.UpdateAvailableCancelButtonText);
+        UpdateReleaseOpenFailedText = AppText.Get(language, AppStringKeys.UpdateReleaseOpenFailedText);
         DiagnosticLogTitleText = AppText.Get(language, AppStringKeys.DiagnosticLogTitleText);
         DiagnosticLogDetailText = AppText.Get(language, AppStringKeys.DiagnosticLogDetailText);
         AntigravityOAuthTitleText = "Antigravity OAuth";
@@ -436,6 +379,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         AntigravityOAuthSaveButtonText = AppText.Get(language, AppStringKeys.AntigravityOAuthSaveButtonText);
         AntigravityOAuthClearButtonText = AppText.Get(language, AppStringKeys.AntigravityOAuthClearButtonText);
         AntigravityOAuthGuideButtonText = AppText.Get(language, AppStringKeys.AntigravityOAuthGuideButtonText);
+        SettingsAntigravityMovedToAccountsText = AppText.Get(language, AppStringKeys.SettingsAntigravityMovedToAccounts);
         TrackProviderLabel = AppText.Get(language, AppStringKeys.TrackProviderLabel);
     }
 
@@ -490,6 +434,15 @@ public sealed class UsageViewModel : INotifyPropertyChanged
     {
         UpdateCheckStatusText = status;
         OnPropertyChanged(nameof(UpdateCheckStatusText));
+    }
+
+    public void SetUpdateAvailablePrompt(string latestVersion)
+    {
+        UpdateAvailableMessageText = AppText.Get(
+            _displayLanguage,
+            AppStringKeys.UpdateAvailableMessageText,
+            latestVersion);
+        OnPropertyChanged(nameof(UpdateAvailableMessageText));
     }
 
     public void SetAntigravityOAuthStatus(string status)
@@ -683,6 +636,7 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(AntigravityOAuthGuideButtonText));
         OnPropertyChanged(nameof(AntigravityOAuthStatusText));
         OnPropertyChanged(nameof(AntigravityOAuthActiveClientText));
+        OnPropertyChanged(nameof(SettingsAntigravityMovedToAccountsText));
         OnPropertyChanged(nameof(LanguageSettingsTitleText));
         OnPropertyChanged(nameof(LanguageSettingsDetailText));
         OnPropertyChanged(nameof(ThemeSettingsTitleText));
@@ -696,23 +650,24 @@ public sealed class UsageViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LimitWarningThresholdText));
         OnPropertyChanged(nameof(CustomThresholdLabelText));
         OnPropertyChanged(nameof(IsLimitWarningEnabled));
+        OnPropertyChanged(nameof(InactiveAccountWarningText));
+        OnPropertyChanged(nameof(InactiveAccountWarningHintText));
+        OnPropertyChanged(nameof(IsInactiveAccountWarningEnabled));
         OnPropertyChanged(nameof(LimitWarningThresholdOptions));
         OnPropertyChanged(nameof(UpdateCheckTitleText));
         OnPropertyChanged(nameof(UpdateCheckDetailText));
         OnPropertyChanged(nameof(CheckForUpdatesButtonText));
         OnPropertyChanged(nameof(UpdateCheckStatusText));
+        OnPropertyChanged(nameof(UpdateAvailableTitleText));
+        OnPropertyChanged(nameof(UpdateAvailableMessageText));
+        OnPropertyChanged(nameof(UpdateAvailableConfirmButtonText));
+        OnPropertyChanged(nameof(UpdateAvailableCancelButtonText));
+        OnPropertyChanged(nameof(UpdateReleaseOpenFailedText));
         OnPropertyChanged(nameof(DiagnosticLogTitleText));
         OnPropertyChanged(nameof(DiagnosticLogDetailText));
         OnPropertyChanged(nameof(TrackProviderLabel));
         OnPropertyChanged(nameof(ProviderSettings));
-        OnPropertyChanged(nameof(CodexProfilesTitleText));
-        OnPropertyChanged(nameof(CodexProfilesDetailText));
-        OnPropertyChanged(nameof(CodexProfileNameLabelText));
-        OnPropertyChanged(nameof(CodexProfilePathLabelText));
-        OnPropertyChanged(nameof(CodexProfileBrowseButtonText));
-        OnPropertyChanged(nameof(CodexProfileAddButtonText));
-        OnPropertyChanged(nameof(CodexProfileRemoveButtonText));
-        OnPropertyChanged(nameof(CodexProfileSettings));
+        OnPropertyChanged(nameof(AccountsButtonText));
         OnPropertyChanged(nameof(LanguageOptions));
         OnPropertyChanged(nameof(ThemeOptions));
     }
@@ -847,16 +802,6 @@ public sealed record ProviderModeOptionViewModel(string Value, string Label)
 }
 
 public sealed record ThemeOptionViewModel(AppThemeMode Mode, string Label, bool IsSelected);
-
-public sealed record CodexProfileSettingItemViewModel(
-    string Id,
-    string DisplayName,
-    string AuthPath,
-    bool IsDefault,
-    string BadgeText)
-{
-    public bool IsRemovable => !IsDefault;
-}
 
 public sealed class LanguageOptionViewModel : INotifyPropertyChanged
 {
@@ -1137,27 +1082,11 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
         AppLanguage language,
         ProviderSetting? setting = null,
         ProviderAutoRefreshStatus? autoRefreshStatus = null,
-        IReadOnlyDictionary<UsageWindowKey, DepletionPrediction>? predictions = null,
-        IReadOnlyList<CodexProfileSetting>? codexProfiles = null,
-        string? selectedCodexProfileId = null)
+        IReadOnlyDictionary<UsageWindowKey, DepletionPrediction>? predictions = null)
     {
         _language = language;
         ProviderName = snapshot.DisplayName;
         ProviderId = snapshot.ProviderId;
-        ShowCodexProfileSelector = snapshot.ProviderId == "codex" && codexProfiles is { Count: > 1 };
-        SelectedCodexProfileId = selectedCodexProfileId ?? CodexProfileSetting.DefaultId;
-        if (ShowCodexProfileSelector)
-        {
-            foreach (var profile in codexProfiles!)
-            {
-                CodexProfiles.Add(new CodexProfileOptionViewModel(
-                    profile.Id,
-                    profile.DisplayName,
-                    profile.AuthPath,
-                    profile.IsDefault,
-                    profile.Id == SelectedCodexProfileId));
-            }
-        }
         LimitProfileText = CreateLimitProfileText(snapshot, setting, language);
         LimitProfileToolTipText = CreateLimitProfileToolTipText(snapshot, setting, language);
         StatusText = StatusToText(snapshot.Status, language);
@@ -1305,6 +1234,23 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
 
         HiddenWindowHintText = FormatHiddenWindowHintText(Windows.Count - CollapsedWindowCount, language);
         UpdateVisibleWindows();
+
+        var resetCredits = snapshot.ResetCredits;
+        ShowResetCredits = resetCredits is { AvailableCount: > 0 };
+        var resetExpiryImminent = ShowResetCredits
+            && IsResetExpiryImminent(resetCredits!.NearestExpiry, DateTimeOffset.Now);
+        ResetCreditText = ShowResetCredits
+            ? AppText.Get(
+                language,
+                resetExpiryImminent
+                    ? AppStringKeys.ResetCreditSummaryImminent
+                    : AppStringKeys.ResetCreditSummaryNormal,
+                resetCredits!.AvailableCount)
+            : string.Empty;
+        ResetCreditBrush = resetExpiryImminent ? BrushKey.StatusWarning : BrushKey.TextSecondary;
+        ResetCreditToolTipText = ShowResetCredits && resetCredits!.NearestExpiry is { } expiry
+            ? AppText.Get(language, AppStringKeys.ResetCreditExpiryTooltip, expiry.LocalDateTime)
+            : string.Empty;
     }
 
     public bool IsExpanded
@@ -1339,6 +1285,7 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SourceBadgeBorderBrush));
         OnPropertyChanged(nameof(UrgencyBrush));
         OnPropertyChanged(nameof(BrandColorBrush));
+        OnPropertyChanged(nameof(ResetCreditBrush));
         foreach (var window in Windows)
         {
             window.RaiseColorProperties();
@@ -1397,9 +1344,6 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
 
     public string ProviderName { get; }
     public string ProviderId { get; }
-    public bool ShowCodexProfileSelector { get; }
-    public string SelectedCodexProfileId { get; }
-    public ObservableCollection<CodexProfileOptionViewModel> CodexProfiles { get; } = [];
     public string LimitProfileText { get; }
     public string LimitProfileToolTipText { get; }
     public string StatusText { get; }
@@ -1431,6 +1375,10 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
     public string PrimaryLabel { get; }
     public string ResetText { get; }
     public string UrgencyBrush { get; }
+    public bool ShowResetCredits { get; }
+    public string ResetCreditText { get; }
+    public string ResetCreditBrush { get; }
+    public string ResetCreditToolTipText { get; }
     public LimitDisplayMode DisplayMode { get; }
     public bool ShowBars { get; }
     public bool ShowPrimarySummary { get; }
@@ -1444,6 +1392,11 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
     public string BrandColorBrush { get; }
     public ObservableCollection<UsageWindowItemViewModel> Windows { get; } = [];
     public ObservableCollection<UsageWindowItemViewModel> VisibleWindows { get; } = [];
+
+    internal static bool IsResetExpiryImminent(DateTimeOffset? nearestExpiry, DateTimeOffset now)
+    {
+        return nearestExpiry is { } expiry && expiry - now <= TimeSpan.FromDays(7);
+    }
 
     internal static string ComputeUrgencyBrush(int percent, bool isUsedPercent)
     {
@@ -1496,10 +1449,15 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
         };
         if (prediction.State == PredictionState.WillDeplete && prediction.DepletionAt is not null)
         {
+            var depletionAt = prediction.DepletionAt.Value;
+            var localDepletionAt = depletionAt.LocalDateTime;
+            object depletionAtValue = DepletesOnLaterDay(depletionAt, prediction.TimeRemaining)
+                ? FormatPredictionDateTime(localDepletionAt, language)
+                : localDepletionAt;
             predictionDetailText = AppText.Get(
                 language,
                 AppStringKeys.PredictionDepletionAt,
-                prediction.DepletionAt.Value.LocalDateTime);
+                depletionAtValue);
         }
 
         (sparklinePoints, sparklineProjectionPoints) = BuildSparklinePoints(prediction);
@@ -1523,6 +1481,37 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
             return AppStringKeys.PredictionNoDepletionWeekly;
         }
         return AppStringKeys.PredictionNoDepletion;
+    }
+
+    // Show the calendar date (not just the clock time) whenever depletion lands on a
+    // different day than now. A bare time like "오전 1:00" is ambiguous both for multi-day
+    // ETAs and for sub-24h windows that cross midnight (e.g. 23:00 now -> 01:00 tomorrow).
+    private static bool DepletesOnLaterDay(DateTimeOffset depletionAt, TimeSpan? timeRemaining)
+    {
+        if (timeRemaining is not { } remaining)
+        {
+            return false;
+        }
+
+        var now = depletionAt - remaining;
+        return depletionAt.LocalDateTime.Date != now.LocalDateTime.Date;
+    }
+
+    private static string FormatPredictionDateTime(DateTime dateTime, AppLanguage language)
+    {
+        return AppLanguageResolver.Resolve(language) switch
+        {
+            AppLanguage.Korean => dateTime.ToString(
+                "M월 d일 tt h:mm",
+                CultureInfo.GetCultureInfo("ko")),
+            AppLanguage.Japanese => dateTime.ToString(
+                "M月d日 H:mm",
+                CultureInfo.GetCultureInfo("ja")),
+            AppLanguage.Chinese => dateTime.ToString(
+                "M月d日 H:mm",
+                CultureInfo.GetCultureInfo("zh-Hans")),
+            _ => dateTime.ToString("MMM d, h:mm tt", CultureInfo.InvariantCulture)
+        };
     }
 
     private static string FormatPredictionDuration(TimeSpan duration, AppLanguage language)
@@ -2081,13 +2070,6 @@ public sealed class ProviderUsageItemViewModel : INotifyPropertyChanged
     }
 }
 
-public sealed record CodexProfileOptionViewModel(
-    string Id,
-    string DisplayName,
-    string AuthPath,
-    bool IsDefault,
-    bool IsSelected);
-
 internal enum ProviderFailureKind
 {
     OAuthSetupRequired,
@@ -2188,6 +2170,7 @@ internal static class UsageWindowLabelText
             {
                 "five-hour" => "5시간 한도",
                 "weekly" => "주간 한도",
+                "monthly" => "월간 한도",
                 "weekly-sonnet" => "Sonnet 주간 한도",
                 "weekly-opus" => "Opus 주간 한도",
                 "weekly-routines" => "Daily Routines 주간 한도",
@@ -2198,6 +2181,7 @@ internal static class UsageWindowLabelText
             {
                 "five-hour" => "5時間上限",
                 "weekly" => "週次上限",
+                "monthly" => "月間上限",
                 "weekly-sonnet" => "Sonnet 週次上限",
                 "weekly-opus" => "Opus 週次上限",
                 "weekly-routines" => "Daily Routines 週次上限",
@@ -2208,6 +2192,7 @@ internal static class UsageWindowLabelText
             {
                 "five-hour" => "5小时限制",
                 "weekly" => "每周限制",
+                "monthly" => "每月限制",
                 "weekly-sonnet" => "Sonnet 每周限制",
                 "weekly-opus" => "Opus 每周限制",
                 "weekly-routines" => "Daily Routines 每周限制",

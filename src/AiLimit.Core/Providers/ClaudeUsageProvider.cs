@@ -141,6 +141,7 @@ internal sealed class ClaudeOAuthUsageClient : IClaudeUsageClient
     };
 
     private readonly HttpClient _httpClient;
+    private readonly Func<string?> _accessTokenResolver;
 
     public ClaudeOAuthUsageClient()
         : this(new HttpClient { Timeout = TimeSpan.FromSeconds(15) })
@@ -148,13 +149,19 @@ internal sealed class ClaudeOAuthUsageClient : IClaudeUsageClient
     }
 
     internal ClaudeOAuthUsageClient(HttpClient httpClient)
+        : this(httpClient, ResolveAccessToken)
     {
-        _httpClient = httpClient;
+    }
+
+    internal ClaudeOAuthUsageClient(HttpClient httpClient, Func<string?> accessTokenResolver)
+    {
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _accessTokenResolver = accessTokenResolver ?? throw new ArgumentNullException(nameof(accessTokenResolver));
     }
 
     public async Task<ClaudeOAuthUsageResponse> ReadUsageAsync(CancellationToken cancellationToken)
     {
-        var accessToken = ResolveAccessToken();
+        var accessToken = _accessTokenResolver();
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             throw new InvalidOperationException("Claude OAuth credentials were not found. Run Claude Code login first.");

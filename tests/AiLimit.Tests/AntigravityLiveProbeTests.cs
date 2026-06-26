@@ -7,6 +7,34 @@ namespace AiLimit.Tests;
 public sealed class AntigravityLiveProbeTests(ITestOutputHelper output)
 {
     [Fact]
+    public async Task LiveAntigravityIdeProbeWhenExplicitlyEnabled()
+    {
+        if (!string.Equals(
+                Environment.GetEnvironmentVariable("AILIMIT_LIVE_ANTIGRAVITY"),
+                "1",
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var provider = new AntigravityUsageProvider();
+        var snapshot = await provider.RefreshAsync(CancellationToken.None);
+
+        output.WriteLine($"Status: {snapshot.Status}");
+        output.WriteLine($"Source channel: {snapshot.SourceChannel ?? "missing"}");
+        output.WriteLine($"Window count: {snapshot.Windows.Count}");
+        foreach (var window in snapshot.Windows)
+        {
+            output.WriteLine($"{window.Label}: {window.PercentRemaining}% used, confidence={window.Confidence}");
+        }
+
+        Assert.Equal(UsageStatus.Fresh, snapshot.Status);
+        Assert.Equal("ide-fallback", snapshot.SourceChannel);
+        Assert.NotEmpty(snapshot.Windows);
+        Assert.All(snapshot.Windows, window => Assert.Equal("high", window.Confidence));
+    }
+
+    [Fact]
     public async Task LiveAntigravityCloudProbeWhenExplicitlyEnabled()
     {
         if (!string.Equals(
@@ -28,15 +56,13 @@ public sealed class AntigravityLiveProbeTests(ITestOutputHelper output)
             ? "Antigravity process: not running"
             : $"Antigravity process: {string.Join(", ", runningProcesses)}");
 
-        var credentials = new AntigravityOAuthCredentialStore(
-            AntigravityOAuthCredentialStore.DefaultCredentialsPath()).Load();
+        var credentials = AntigravityOAuthCredentialStore.Load();
         output.WriteLine(credentials is null
             ? "Stored credentials: missing"
             : $"Stored credentials: access={Has(credentials.AccessToken)}, refresh={Has(credentials.RefreshToken)}, clientId={Has(credentials.ClientId)}, clientSecret={Has(credentials.ClientSecret)}");
 
         var cloudClient = new AntigravityOAuthUsageClient(
-            new HttpClient { Timeout = TimeSpan.FromSeconds(30) },
-            AntigravityOAuthCredentialStore.DefaultCredentialsPath());
+            new HttpClient { Timeout = TimeSpan.FromSeconds(30) });
         var cloudUsage = await cloudClient.ReadUsageAsync(CancellationToken.None);
         output.WriteLine($"Cloud-only window count: {cloudUsage.Buckets.Count}");
 

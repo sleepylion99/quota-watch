@@ -8,7 +8,7 @@ public interface IResourceDictionarySwapper
     void Swap(ResolvedTheme theme);
 }
 
-// TODO Task 5: replace with real ResourceDictionarySwapper that swaps Application.Current.Resources.MergedDictionaries
+// Useful for tests or fail-safe construction when resource dictionaries should not be mutated.
 public sealed class NoOpResourceDictionarySwapper : IResourceDictionarySwapper
 {
     public void Swap(ResolvedTheme theme) { }

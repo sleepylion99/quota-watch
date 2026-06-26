@@ -10,26 +10,36 @@ public sealed class CodexUsageProvider : IUsageProvider
 {
     private readonly ICodexRateLimitClient _client;
     private readonly CodexUsageMode _mode;
+    private readonly ICodexResetCreditsClient? _resetCreditsClient;
 
     public CodexUsageProvider()
-        : this(CodexCompositeRateLimitClient.CreateDefault(), CodexUsageMode.Auto)
+        : this(CodexCompositeRateLimitClient.CreateDefault(), CodexUsageMode.Auto, new CodexWhamResetCreditsClient())
     {
     }
 
     public CodexUsageProvider(CodexUsageMode mode)
-        : this(CodexCompositeRateLimitClient.CreateDefault(mode), mode)
+        : this(CodexCompositeRateLimitClient.CreateDefault(mode), mode, new CodexWhamResetCreditsClient())
     {
     }
 
     public CodexUsageProvider(CodexUsageMode mode, string authPath)
-        : this(CodexCompositeRateLimitClient.CreateDefault(mode, authPath), mode)
+        : this(
+            CodexCompositeRateLimitClient.CreateDefault(mode, authPath),
+            mode,
+            new CodexWhamResetCreditsClient(
+                new HttpClient { Timeout = TimeSpan.FromSeconds(10) },
+                Path.GetFullPath(authPath)))
     {
     }
 
-    internal CodexUsageProvider(ICodexRateLimitClient client, CodexUsageMode mode = CodexUsageMode.Auto)
+    internal CodexUsageProvider(
+        ICodexRateLimitClient client,
+        CodexUsageMode mode = CodexUsageMode.Auto,
+        ICodexResetCreditsClient? resetCreditsClient = null)
     {
         _client = client;
         _mode = mode;
+        _resetCreditsClient = resetCreditsClient;
     }
 
     public ProviderDescriptor Descriptor { get; } = new("codex", "ChatGPT Codex", true);
@@ -62,7 +72,7 @@ public sealed class CodexUsageProvider : IUsageProvider
                 return Failed("Codex app-server returned no rate-limit windows.");
             }
 
-            return new UsageSnapshot(
+            var snapshot = new UsageSnapshot(
                 Descriptor.Id,
                 Descriptor.DisplayName,
                 DateTimeOffset.Now,
@@ -70,6 +80,8 @@ public sealed class CodexUsageProvider : IUsageProvider
                 UsageStatus.Fresh,
                 windows,
                 AccountKey: rateLimits.AccountKey);
+
+            return await AttachResetCreditsAsync(snapshot, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -83,10 +95,12 @@ public sealed class CodexUsageProvider : IUsageProvider
         string fallbackLabel)
     {
         var minutes = window.WindowDurationMins;
+        // A monthly window is ~28-31 days; Free / Go plans expose only this one.
         var id = minutes switch
         {
             300 => "five-hour",
             10080 => "weekly",
+            >= 40000 and <= 45000 => "monthly",
             _ when minutes is not null => $"{minutes}-minute",
             _ => fallbackId
         };
@@ -94,6 +108,7 @@ public sealed class CodexUsageProvider : IUsageProvider
         {
             300 => "5h limit",
             10080 => "Weekly limit",
+            >= 40000 and <= 45000 => "Monthly limit",
             _ when minutes is not null => $"{minutes}-minute limit",
             _ => fallbackLabel
         };
@@ -101,6 +116,18 @@ public sealed class CodexUsageProvider : IUsageProvider
         DateTimeOffset? resetAt = window.ResetsAt is null
             ? null
             : DateTimeOffset.FromUnixTimeSeconds(window.ResetsAt.Value);
+
+        // Free / Go plans omit window_duration_mins and expose only a monthly window,
+        // so the code above falls back to "five-hour". But a reset more than ~8 days
+        // out can only be a monthly window (5h resets within 5h, weekly within 7d) —
+        // relabel it accordingly using the reset time as the reliable signal.
+        if (id != "monthly"
+            && resetAt is { } reset
+            && reset - DateTimeOffset.UtcNow > TimeSpan.FromDays(8))
+        {
+            id = "monthly";
+            label = "Monthly limit";
+        }
 
         return new UsageWindow(
             id,
@@ -170,6 +197,52 @@ public sealed class CodexUsageProvider : IUsageProvider
             UsageStatus.Failed,
             [],
             message);
+    }
+
+    private async Task<UsageSnapshot> AttachResetCreditsAsync(
+        UsageSnapshot snapshot,
+        CancellationToken cancellationToken)
+    {
+        if (_resetCreditsClient is null)
+        {
+            return snapshot;
+        }
+
+        try
+        {
+            var credits = await _resetCreditsClient.ReadResetCreditsAsync(cancellationToken).ConfigureAwait(false);
+            var summary = BuildResetCreditSummary(credits);
+            return summary is null ? snapshot : snapshot with { ResetCredits = summary };
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return snapshot;
+        }
+    }
+
+    internal static ResetCreditSummary? BuildResetCreditSummary(CodexResetCredits? credits)
+    {
+        if (credits is null)
+        {
+            return null;
+        }
+
+        var available = credits.Credits.Where(entry => entry.IsAvailable).ToList();
+        if (available.Count == 0)
+        {
+            return null;
+        }
+
+        var count = credits.AvailableCount > 0 ? credits.AvailableCount : available.Count;
+
+        DateTimeOffset? nearest = available
+            .Where(entry => entry.ExpiresAt is not null)
+            .Select(entry => entry.ExpiresAt!.Value)
+            .OrderBy(value => value)
+            .Cast<DateTimeOffset?>()
+            .FirstOrDefault();
+
+        return new ResetCreditSummary(count, nearest);
     }
 
     private static string SanitizeId(string value)
@@ -436,7 +509,7 @@ internal sealed class CodexWhamRateLimitClient : ICodexRateLimitClient
         return false;
     }
 
-    private static string? ReadAccessToken(string authPath)
+    internal static string? ReadAccessToken(string authPath)
     {
         try
         {
@@ -463,7 +536,7 @@ internal sealed class CodexWhamRateLimitClient : ICodexRateLimitClient
         }
     }
 
-    private static string ResolveAuthPath()
+    internal static string ResolveAuthPath()
     {
         var codexHome = Environment.GetEnvironmentVariable("CODEX_HOME");
         if (!string.IsNullOrWhiteSpace(codexHome))

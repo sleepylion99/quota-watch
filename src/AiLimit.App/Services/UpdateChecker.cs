@@ -36,7 +36,7 @@ public sealed class UpdateChecker
                     return fallbackResult;
                 }
 
-                throw new UpdateCheckException("GitHub 릴리즈 정보를 볼 수 없습니다. 저장소 또는 릴리즈 공개 상태를 확인하세요.");
+                throw new UpdateCheckException("Cannot access GitHub release info. Check repository or release visibility.");
             }
 
             response.EnsureSuccessStatusCode();

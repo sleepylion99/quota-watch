@@ -49,13 +49,16 @@ public sealed class BrushKeyConverterTests
     }
 
     [Fact]
-    public void Convert_NullApplicationCurrent_ReturnsTransparent()
+    public void Convert_DefaultResolverUnresolvableKey_ReturnsTransparent()
     {
-        // Default resolver calls Application.Current?.TryFindResource which is null in xUnit.
-        // The converter must not throw.
+        // The default resolver calls Application.Current?.TryFindResource. Use a key that no resource
+        // dictionary defines so the result is deterministic regardless of whether another test in the
+        // suite has created a global Application.Current — WPF cannot reset it, so this test must not
+        // assume it is null. The converter must fall back to Transparent without throwing.
         var converter = new BrushKeyConverter();
 
-        var result = converter.Convert("Brush.Surface.Window", typeof(Brush), null, CultureInfo.InvariantCulture);
+        var result = converter.Convert(
+            "Brush.UnitTest.Unresolvable.DoesNotExist", typeof(Brush), null, CultureInfo.InvariantCulture);
 
         Assert.Equal(Brushes.Transparent, result);
     }

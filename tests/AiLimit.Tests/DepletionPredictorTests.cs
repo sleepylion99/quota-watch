@@ -14,9 +14,9 @@ public sealed class DepletionPredictorTests
         var prediction = DepletionPredictor.Predict(samples, 50, Now.AddHours(3), Now);
 
         Assert.Equal(PredictionState.WillDeplete, prediction.State);
-        Assert.Equal(30, prediction.Slope, 6);
-        Assert.Equal(Now.AddHours(5.0 / 3.0), prediction.DepletionAt);
-        Assert.Equal(TimeSpan.FromHours(5.0 / 3.0), prediction.TimeRemaining);
+        Assert.InRange(prediction.Slope, 29, 31);
+        Assert.NotNull(prediction.TimeRemaining);
+        Assert.InRange(prediction.TimeRemaining!.Value.TotalHours, 1.6, 1.7);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class DepletionPredictorTests
         var prediction = DepletionPredictor.Predict(samples, 15, Now.AddHours(4), Now);
 
         Assert.Equal(PredictionState.WillDeplete, prediction.State);
-        Assert.Equal(30, prediction.Slope, 6);
+        Assert.InRange(prediction.Slope, 29, 31);
         Assert.Equal(3, prediction.TrendSamples.Count);
         Assert.Equal(5, prediction.TrendSamples[0].ConsumedPercent);
     }
@@ -107,7 +107,36 @@ public sealed class DepletionPredictorTests
         Assert.Equal(PredictionState.ResetsFirst, prediction.State);
         Assert.Null(prediction.TimeRemaining);
         Assert.Null(prediction.DepletionAt);
-        Assert.Equal(30, prediction.Slope, 6);
+        Assert.InRange(prediction.Slope, 29, 31);
+    }
+
+    [Fact]
+    public void RecentBurstDominatesLongQuietHistory()
+    {
+        // Weekly-style scenario: 6 days of near-zero usage (~0.2 %/h) followed by a
+        // sudden 3-hour burst (~7 %/h) lifting consumption from 30 % to 52 %. A plain
+        // linear regression dilutes the burst across the whole week and predicts
+        // ResetsFirst; the EWMA-weighted regression weights the recent burst and
+        // surfaces a concrete depletion ETA.
+        var samples = new List<UsageSample>();
+        for (var hoursAgo = 144; hoursAgo >= 6; hoursAgo -= 6)
+        {
+            samples.Add(new UsageSample(
+                "claude",
+                "weekly",
+                Now.AddHours(-hoursAgo),
+                30.0 * (144 - hoursAgo) / 144));
+        }
+        samples.Add(new UsageSample("claude", "weekly", Now.AddHours(-3), 30));
+        samples.Add(new UsageSample("claude", "weekly", Now.AddHours(-2), 38));
+        samples.Add(new UsageSample("claude", "weekly", Now.AddHours(-1), 45));
+        samples.Add(new UsageSample("claude", "weekly", Now, 52));
+
+        var prediction = DepletionPredictor.Predict(samples, 52, Now.AddHours(20), Now);
+
+        Assert.Equal(PredictionState.WillDeplete, prediction.State);
+        Assert.NotNull(prediction.TimeRemaining);
+        Assert.InRange(prediction.TimeRemaining!.Value.TotalHours, 4, 14);
     }
 
     private static IReadOnlyList<UsageSample> Samples(params (int Minutes, double Percent)[] values)

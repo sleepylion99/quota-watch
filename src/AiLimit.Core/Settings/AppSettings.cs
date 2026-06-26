@@ -92,31 +92,6 @@ public sealed record ProviderLimitWarningSetting(
     int ThresholdPercent,
     bool IsCustom = false);
 
-public sealed record CodexProfileSetting(
-    string Id,
-    string DisplayName,
-    string AuthPath,
-    bool IsDefault = false)
-{
-    public const string DefaultId = "default";
-}
-
-public static class CodexProfilePaths
-{
-    public static string DefaultAuthPath()
-    {
-        var codexHome = Environment.GetEnvironmentVariable("CODEX_HOME");
-        if (!string.IsNullOrWhiteSpace(codexHome))
-        {
-            return Path.GetFullPath(Path.Combine(codexHome, "auth.json"));
-        }
-
-        return Path.GetFullPath(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".codex",
-            "auth.json"));
-    }
-}
 
 public sealed record AppSettings(
     RefreshCadence RefreshCadence,
@@ -135,8 +110,7 @@ public sealed record AppSettings(
     double DashboardOpacity = 1.0,
     double WidgetOpacity = 1.0,
     bool IsDashboardAlwaysOnTop = false,
-    IReadOnlyList<CodexProfileSetting>? CodexProfiles = null,
-    string? SelectedCodexProfileId = null)
+    bool IsInactiveAccountWarningEnabled = false)
 {
     public const double MinimumWindowOpacity = 0.2;
     public const double MaximumWindowOpacity = 1.0;
@@ -164,16 +138,7 @@ public sealed record AppSettings(
         ThemeMode: AppThemeMode.System,
         DashboardOpacity: 1.0,
         WidgetOpacity: 1.0,
-        IsDashboardAlwaysOnTop: false,
-        CodexProfiles:
-        [
-            new CodexProfileSetting(
-                CodexProfileSetting.DefaultId,
-                "Default",
-                CodexProfilePaths.DefaultAuthPath(),
-                IsDefault: true)
-        ],
-        SelectedCodexProfileId: CodexProfileSetting.DefaultId);
+        IsDashboardAlwaysOnTop: false);
 
     public IReadOnlyList<ProviderSetting> GetEffectiveProviders()
     {
@@ -192,10 +157,6 @@ public sealed record AppSettings(
     public AppSettings Normalize()
     {
         var legacyThreshold = ClampPercent(LimitWarningThresholdPercent);
-        var codexProfiles = GetEffectiveCodexProfiles();
-        var selectedCodexProfileId = codexProfiles.Any(profile => profile.Id == SelectedCodexProfileId)
-            ? SelectedCodexProfileId
-            : CodexProfileSetting.DefaultId;
         return this with
         {
             Providers = GetEffectiveProviders(),
@@ -204,63 +165,8 @@ public sealed record AppSettings(
             WeeklyLimitWarningSuppressions = WeeklyLimitWarningSuppressions ?? [],
             ThemeMode = NormalizeThemeMode(ThemeMode),
             DashboardOpacity = ClampOpacity(DashboardOpacity),
-            WidgetOpacity = ClampOpacity(WidgetOpacity),
-            CodexProfiles = codexProfiles,
-            SelectedCodexProfileId = selectedCodexProfileId
+            WidgetOpacity = ClampOpacity(WidgetOpacity)
         };
-    }
-
-    public IReadOnlyList<CodexProfileSetting> GetEffectiveCodexProfiles()
-    {
-        var defaultPath = CodexProfilePaths.DefaultAuthPath();
-        var profiles = new List<CodexProfileSetting>
-        {
-            new(
-                CodexProfileSetting.DefaultId,
-                "Default",
-                defaultPath,
-                IsDefault: true)
-        };
-        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            defaultPath
-        };
-        var ids = new HashSet<string>(StringComparer.Ordinal)
-        {
-            CodexProfileSetting.DefaultId
-        };
-
-        foreach (var profile in CodexProfiles ?? [])
-        {
-            if (profile.IsDefault || profile.Id == CodexProfileSetting.DefaultId)
-            {
-                continue;
-            }
-
-            var path = NormalizeProfilePath(profile.AuthPath);
-            if (path is null || !paths.Add(path))
-            {
-                continue;
-            }
-
-            var id = string.IsNullOrWhiteSpace(profile.Id) || !ids.Add(profile.Id)
-                ? Guid.NewGuid().ToString("N")
-                : profile.Id;
-            ids.Add(id);
-            var displayName = string.IsNullOrWhiteSpace(profile.DisplayName)
-                ? ProfileNameFromPath(path)
-                : profile.DisplayName.Trim();
-            profiles.Add(new CodexProfileSetting(id, displayName, path));
-        }
-
-        return profiles;
-    }
-
-    public CodexProfileSetting GetSelectedCodexProfile()
-    {
-        var profiles = GetEffectiveCodexProfiles();
-        return profiles.FirstOrDefault(profile => profile.Id == SelectedCodexProfileId)
-            ?? profiles[0];
     }
 
     public static double ClampOpacity(double value)
@@ -325,29 +231,6 @@ public sealed record AppSettings(
         return providerId == "codex"
             ? percent is 10 or 20 or 30
             : percent is 90 or 80 or 70;
-    }
-
-    private static string? NormalizeProfilePath(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return null;
-        }
-
-        try
-        {
-            return Path.GetFullPath(path.Trim());
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static string ProfileNameFromPath(string authPath)
-    {
-        var directoryName = Path.GetFileName(Path.GetDirectoryName(authPath));
-        return string.IsNullOrWhiteSpace(directoryName) ? "Codex profile" : directoryName;
     }
 
     public AppSettings PruneExpiredWeeklyLimitWarningSuppressions(DateTimeOffset now)

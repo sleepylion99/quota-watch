@@ -2,7 +2,9 @@ using System.Windows;
 using System.Windows.Media.Animation;
 using AiLimit.App.Services;
 using AiLimit.App.ViewModels;
+using AiLimit.App.ViewModels.Accounts;
 using AiLimit.Core.Providers;
+using AiLimit.Core.Providers.Accounts;
 using AiLimit.Core.Settings;
 
 namespace AiLimit.App.Windows;
@@ -12,6 +14,7 @@ public partial class DashboardWindow : Window
     private readonly AppState _state;
     private readonly UsageViewModel _viewModel = new();
     private SettingsWindow? _settingsWindow;
+    private AccountsWindow? _accountsWindow;
     private bool _isApplyingWindowOpacity;
 
     public DashboardWindow(AppState state)
@@ -134,6 +137,53 @@ public partial class DashboardWindow : Window
         _settingsWindow.Show();
     }
 
+    private void AccountsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_accountsWindow is { IsVisible: true })
+        {
+            _accountsWindow.Activate();
+            return;
+        }
+
+        var providers = new IAccountProvider[]
+        {
+            AppState.GetOrCreateCodexAccountProvider(),
+            AppState.GetOrCreateClaudeAccountProvider(),
+            AppState.GetOrCreateAntigravityAccountProvider()
+        };
+
+        var registry = AppState.GetOrCreateAntigravityClientRegistry();
+        var vm = new AccountsWindowViewModel(
+            providers,
+            _state.DisplayLanguage,
+            antigravitySignIn: AppState.BuildAntigravitySignIn(),
+            antigravityOAuthClientPanel: new AntigravityOAuthClientPanelViewModel(registry),
+            claudeSignIn: AppState.BuildClaudeSignIn());
+        vm.ActiveAccountChanged += async (_, _) =>
+        {
+            try
+            {
+                await _state.RefreshNowAsync();
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                AppLog.Write(
+                    AppLogLevel.Warning,
+                    "Dashboard",
+                    $"Accounts window refresh after switch failed. {ex.GetType().Name}: {ex.Message}");
+            }
+        };
+
+        _accountsWindow = new AccountsWindow(vm)
+        {
+            Owner = this
+        };
+        _accountsWindow.Closed += (_, _) => _accountsWindow = null;
+
+        // Tabs auto-load when they become visible (see AccountsTable); no explicit reload needed.
+        _accountsWindow.Show();
+    }
+
     private void ThemeModeButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is System.Windows.Controls.Button { Tag: string value }
@@ -237,24 +287,6 @@ public partial class DashboardWindow : Window
         ApplyAlwaysOnTop();
     }
 
-    private void CodexProfileSelector_SelectionChanged(
-        object sender,
-        System.Windows.Controls.SelectionChangedEventArgs e)
-    {
-        if (sender is not System.Windows.Controls.ComboBox
-            {
-                DataContext: ProviderUsageItemViewModel provider,
-                SelectedValue: string profileId
-            }
-            || provider.ProviderId != "codex"
-            || profileId == _state.CurrentSettings.SelectedCodexProfileId)
-        {
-            return;
-        }
-
-        _state.SetSelectedCodexProfile(profileId);
-    }
-
     private void OnActivated(object? sender, EventArgs e)
     {
         _state.ThemeService?.ReevaluateSystemTheme();
@@ -303,9 +335,7 @@ public partial class DashboardWindow : Window
             themeMode: _state.CurrentSettings.ThemeMode,
             dashboardOpacity: _state.CurrentSettings.DashboardOpacity,
             widgetOpacity: _state.CurrentSettings.WidgetOpacity,
-            predictions: _state.CurrentPredictions,
-            codexProfiles: _state.CurrentSettings.GetEffectiveCodexProfiles(),
-            selectedCodexProfileId: _state.CurrentSettings.SelectedCodexProfileId);
+            predictions: _state.CurrentPredictions);
         AppLog.Write(
             "Dashboard",
             $"ViewModel updated. snapshots={_state.CurrentSnapshots.Count}, settingsRows={_viewModel.ProviderSettings.Count}, refreshing={_state.IsRefreshing}, displayMode={LimitDisplayMode.Bars}, language={_state.CurrentSettings.Language}");

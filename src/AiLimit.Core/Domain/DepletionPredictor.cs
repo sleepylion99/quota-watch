@@ -4,6 +4,7 @@ public static class DepletionPredictor
 {
     public const int MinimumSampleCount = 3;
     public static readonly TimeSpan MinimumSampleSpan = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan TrendHalfLife = TimeSpan.FromHours(2);
     public const double MinimumSlopePerHour = 0.2;
     public const double ResetDropThreshold = 5;
 
@@ -45,17 +46,38 @@ public static class DepletionPredictor
                 trendSamples);
         }
 
+        // Exponentially weighted least-squares regression. Recent samples dominate
+        // (weight halves every TrendHalfLife) so a burst at the end of a long quiet
+        // history surfaces immediately instead of being averaged into a flat trend.
         var origin = trendSamples[0].AtUtc;
-        var xMean = trendSamples.Average(sample => (sample.AtUtc - origin).TotalHours);
-        var yMean = trendSamples.Average(sample => sample.ConsumedPercent);
+        var decay = Math.Log(2) / TrendHalfLife.TotalHours;
+        var nowHours = (now - origin).TotalHours;
+        double sumW = 0, sumWX = 0, sumWY = 0;
+        foreach (var sample in trendSamples)
+        {
+            var t = (sample.AtUtc - origin).TotalHours;
+            var w = Math.Exp(-decay * (nowHours - t));
+            sumW += w;
+            sumWX += w * t;
+            sumWY += w * sample.ConsumedPercent;
+        }
+
+        if (sumW <= 0)
+        {
+            return DepletionPrediction.None;
+        }
+
+        var xMean = sumWX / sumW;
+        var yMean = sumWY / sumW;
         var numerator = 0d;
         var denominator = 0d;
         foreach (var sample in trendSamples)
         {
-            var x = (sample.AtUtc - origin).TotalHours - xMean;
-            var y = sample.ConsumedPercent - yMean;
-            numerator += x * y;
-            denominator += x * x;
+            var t = (sample.AtUtc - origin).TotalHours;
+            var w = Math.Exp(-decay * (nowHours - t));
+            var dx = t - xMean;
+            numerator += w * dx * (sample.ConsumedPercent - yMean);
+            denominator += w * dx * dx;
         }
 
         if (denominator <= 0)
